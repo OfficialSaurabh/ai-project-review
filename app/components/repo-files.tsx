@@ -3,6 +3,7 @@ import { GoChevronRight } from "react-icons/go";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useState } from "react";
+import { AnalysisDashboard } from "./analysis-dashboard";
 
 interface FileItem {
   path: string;
@@ -14,7 +15,7 @@ interface FileItem {
 interface FileExplorerProps {
   files: FileItem[];
   repoName: string;
-  owner: string; 
+  owner: string;
   webhookUrl?: string;
 }
 
@@ -23,14 +24,19 @@ export const FileExplorer = ({
   repoName,
   owner,
 }: FileExplorerProps) => {
+
+  const [selectedFileContent, setSelectedFileContent] = useState("");
+  const [reviewData, setReviewData] = useState<AnalysisResponse | null>(null);
+  const [showFile, setShowFile] = useState(true);
+  const [isReviewOpen, setIsReviewOpen] = useState(false);
   const getFileIcon = (file: FileItem) => {
     if (file.type === "tree") {
-      return <CiFolderOn  className="w-4 h-4 text-primary" />;
+      return <CiFolderOn className="w-4 h-4 text-primary" />;
     }
-    return <CiFileOn  className="w-4 h-4 text-muted-foreground" />;
+    return <CiFileOn className="w-4 h-4 text-muted-foreground" />;
   };
 
-  
+
 
   const formatFileSize = (bytes?: number) => {
     if (!bytes) return "";
@@ -39,72 +45,88 @@ export const FileExplorer = ({
     return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
   };
 
-  const [selectedFileContent, setSelectedFileContent] = useState("");
-console.log("Selected File:", selectedFileContent);
+  const displayFiles = files.filter((f) => f.type === "blob");
 
-const displayFiles = files.filter((f) => f.type === "blob");
+  const getFileContent = async (path: string): Promise<void> => {
+    if (!repoName) return;
+    try {
+      const res = await fetch(
+        `https://api.github.com/repos/OfficialSaurabh/${repoName}/contents/${path}`
+      );
+      const file = await res.json();
 
-const getFileContent = async (path: string): Promise<void> => {
-  if (!repoName) return;
-  try {
-    const res = await fetch(
-      `https://api.github.com/repos/OfficialSaurabh/${repoName}/contents/${path}`
-    );
-    const file = await res.json();
-
-    if (file && file.content) {
-      const base64 = file.content.replace(/\n/g, "");
-      const decoded = typeof atob === "function" ? atob(base64) : "";
-      setSelectedFileContent(decoded);
-    } else {
-      setSelectedFileContent("// No content");
+      if (file && file.content) {
+        const base64 = file.content.replace(/\n/g, "");
+        const decoded = typeof atob === "function" ? atob(base64) : "";
+        setSelectedFileContent(decoded);
+      } else {
+        setSelectedFileContent("// No content");
+      }
+    } catch (err) {
+      console.error("Failed to load file content", err);
+      setSelectedFileContent("// Error loading file");
     }
-  } catch (err) {
-    console.error("Failed to load file content", err);
-    setSelectedFileContent("// Error loading file");
-  }
-};
-
-const webhookUrl = process.env.NEXT_PUBLIC_REVIEW_WEBHOOK;
-
-const handleReviewFile = async (path: string): Promise<void> => {
-  const filename = path.startsWith("/") ? path : `/${path}`;
-  const payload = {
-    action: "file",
-    owner: owner,
-    repo: repoName,
-    ref: "main",
-    filename,
   };
 
-  try {
-    if (!webhookUrl) {
-  throw new Error("Missing env: NEXT_PUBLIC_REVIEW_WEBHOOK");
-}
-    const res = await fetch(webhookUrl,
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(payload),
+  const webhookUrl = process.env.NEXT_PUBLIC_REVIEW_WEBHOOK;
+
+  const handleReviewFile = async (path: string): Promise<void> => {
+    const filename = path.startsWith("/") ? path : `/${path}`;
+    const payload = {
+      action: "file",
+      owner: owner,
+      repo: repoName,
+      ref: "main",
+      filename,
+    };
+
+    try {
+      if (!webhookUrl) {
+        throw new Error("Missing env: NEXT_PUBLIC_REVIEW_WEBHOOK");
       }
-    );
+      const res = await fetch(webhookUrl,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(payload),
+        }
+      );
 
-    if (!res.ok) {
-      console.error("Review API failed", res.status, res.statusText);
-      return;
+      if (!res.ok) {
+        console.error("Review API failed", res.status, res.statusText);
+        return;
+      }
+
+      const data = await res.json().catch(() => null);
+      const mappedResponse = {
+        project: data.project,
+        overallFileScore: data.file?.overallFileScore ?? data.overallProjectScore ?? 0,
+        metrics: {
+          testCoverageEstimate: data.file?.metrics?.testCoverageEstimate ?? 0,
+          documentationScore: data.file?.metrics?.documentationScore ?? 0,
+          readability: data.file?.metrics?.readability ?? 0,
+        },
+      };
+
+      setReviewData(mappedResponse);
+      setIsReviewOpen(true);
+      setShowFile(false); 
+      console.log("Review API response:", data);
+    } catch (err) {
+      console.error("Error calling review API", err);
     }
+  };
 
-    const data = await res.json().catch(() => null);
-    console.log("Review API response:", data);
-  } catch (err) {
-    console.error("Error calling review API", err);
-  }
-};
-
+     const handleCloseReview = () => {
+    setIsReviewOpen(false);
+    setShowFile(true);
+  };
   return (
     <div className="space-y-6 animate-in fade-in duration-500">
+      {/* Files UI */}
+      {showFile && (
       <div className="glass-card p-6 rounded-xl">
         <div className="flex items-center justify-between mb-6">
           <div>
@@ -152,7 +174,7 @@ const handleReviewFile = async (path: string): Promise<void> => {
                   >
                     <span className="flex items-center gap-1">
                       Review File
-                      <GoChevronRight  className="w-3 h-3" />
+                      <GoChevronRight className="w-3 h-3" />
                     </span>
                   </Button>
                 </div>
@@ -160,8 +182,12 @@ const handleReviewFile = async (path: string): Promise<void> => {
             ))}
           </div>
         </ScrollArea>
-        
       </div>
+        )}
+
+      {isReviewOpen && reviewData && (
+        <AnalysisDashboard response={reviewData} onClose={handleCloseReview} />
+      )}
     </div>
   );
 };
