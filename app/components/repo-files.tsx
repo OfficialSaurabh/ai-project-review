@@ -3,7 +3,6 @@ import { GoChevronRight } from "react-icons/go";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useState } from "react";
-import { log } from "console";
 
 interface FileItem {
   path: string;
