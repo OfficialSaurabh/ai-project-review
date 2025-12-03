@@ -127,7 +127,7 @@ export default function RepoFilesPage() {
           {isLoading ? (
             <p>Loading files...</p>
           ) : (
-            <RepoFiles files={files} repoName={name} />
+            <RepoFiles files={files} repoName={name} owner={owner} />
           )}
         </div>
       </div>

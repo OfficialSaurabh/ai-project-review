@@ -14,11 +14,14 @@ interface FileItem {
 interface FileExplorerProps {
   files: FileItem[];
   repoName: string;
+  owner: string; 
+  webhookUrl?: string;
 }
 
 export const FileExplorer = ({
   files,
   repoName,
+  owner,
 }: FileExplorerProps) => {
   const getFileIcon = (file: FileItem) => {
     if (file.type === "tree") {
@@ -37,32 +40,68 @@ export const FileExplorer = ({
   };
 
   const [selectedFileContent, setSelectedFileContent] = useState("");
-  console.log("Selected File:", selectedFileContent);
+console.log("Selected File:", selectedFileContent);
 
+const displayFiles = files.filter((f) => f.type === "blob");
 
-  const displayFiles = files.filter((f) => f.type === "blob");
+const getFileContent = async (path: string): Promise<void> => {
+  if (!repoName) return;
+  try {
+    const res = await fetch(
+      `https://api.github.com/repos/OfficialSaurabh/${repoName}/contents/${path}`
+    );
+    const file = await res.json();
 
-    const getFileContent = async (path) => {
-    if (!repoName) return;
-    try {
-      const res = await fetch(
-        `https://api.github.com/repos/OfficialSaurabh/${repoName}/contents/${path}`
-      );
-      const file = await res.json();
-
-      if (file && file.content) {
-        // GitHub returns base64 with newlines, remove them
-        const base64 = file.content.replace(/\n/g, "");
-        const decoded = typeof atob === "function" ? atob(base64) : "";
-        setSelectedFileContent(decoded);
-      } else {
-        setSelectedFileContent("// No content");
-      }
-    } catch (err) {
-      console.error("Failed to load file content", err);
-      setSelectedFileContent("// Error loading file");
+    if (file && file.content) {
+      const base64 = file.content.replace(/\n/g, "");
+      const decoded = typeof atob === "function" ? atob(base64) : "";
+      setSelectedFileContent(decoded);
+    } else {
+      setSelectedFileContent("// No content");
     }
+  } catch (err) {
+    console.error("Failed to load file content", err);
+    setSelectedFileContent("// Error loading file");
+  }
+};
+
+const webhookUrl = process.env.NEXT_PUBLIC_REVIEW_WEBHOOK;
+
+const handleReviewFile = async (path: string): Promise<void> => {
+  const filename = path.startsWith("/") ? path : `/${path}`;
+  const payload = {
+    action: "file",
+    owner: owner,
+    repo: repoName,
+    ref: "main",
+    filename,
   };
+
+  try {
+    if (!webhookUrl) {
+  throw new Error("Missing env: NEXT_PUBLIC_REVIEW_WEBHOOK");
+}
+    const res = await fetch(webhookUrl,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(payload),
+      }
+    );
+
+    if (!res.ok) {
+      console.error("Review API failed", res.status, res.statusText);
+      return;
+    }
+
+    const data = await res.json().catch(() => null);
+    console.log("Review API response:", data);
+  } catch (err) {
+    console.error("Error calling review API", err);
+  }
+};
 
   return (
     <div className="space-y-6 animate-in fade-in duration-500">
@@ -102,11 +141,12 @@ export const FileExplorer = ({
                       )}
                     </div>
                   </div>
-                  <Button onClick={ () =>getFileContent(file.path)} >
+                  {/* <Button onClick={ () =>getFileContent(file.path)} >
                     Load Content
-                  </Button>
+                  </Button> */}
                   <Button
                     variant="outline"
+                    onClick={() => handleReviewFile(file.path)}
                     size="sm"
                     className="border-primary/50 hover:bg-primary hover:text-primary-foreground shrink-0"
                   >
