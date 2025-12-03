@@ -142,3 +142,13 @@
     }
   }
 }
+
+@layer utilities {
+  .glass-card {
+    @apply bg-card/50 backdrop-blur-xl border border-border/50;
+  }
+
+  .glow-effect {
+    box-shadow: 0 0 20px hsl(var(--glow) / 0.3);
+  }
+}
