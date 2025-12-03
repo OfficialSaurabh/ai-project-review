@@ -3,9 +3,17 @@ import LoginBtn from "../app/components/login-btn";
 
 export default function Home() {
   return (
-    <div className="flex min-h-screen items-center justify-center bg-zinc-50 font-sans dark:bg-black">
+    <div className=" min-h-screen ">
       <LoginBtn />
-      <main className="flex min-h-screen w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
+      <div className="text-center mb-12 animate-in fade-in slide-in-from-top duration-700">
+          <h1 className="text-5xl md:text-6xl font-bold mb-4 bg-gradient-to-r from-primary via-foreground to-primary bg-clip-text text-transparent">
+            AI Project Analyzer
+          </h1>
+          <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
+            Analyze code quality, structure, and documentation with detailed insights and actionable suggestions
+          </p>
+        </div>
+      {/* <main className="flex min-h-screen w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
         <Image
           className="dark:invert"
           src="/next.svg"
@@ -61,7 +69,7 @@ export default function Home() {
             Documentation
           </a>
         </div>
-      </main>
+      </main> */}
     </div>
   );
 }
