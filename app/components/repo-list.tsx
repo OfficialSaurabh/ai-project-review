@@ -4,6 +4,8 @@ import { IoIosStarOutline } from "react-icons/io";
 // import { PiGitForkLight } from "react-icons/pi";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import RepoFiles from "./repo-files";
+import { useState, useEffect } from "react";
 
 interface Repo {
   id: number;
@@ -17,9 +19,36 @@ interface Repo {
 
 interface RepoListProps {
   repos: Repo[];
+  onSelectRepo: (repo: Repo) => void;
 }
 
-export const RepoList = ({ repos }: RepoListProps) => {
+
+export const RepoList = ({ repos, onSelectRepo }: RepoListProps) => {
+ const [files, setFiles] = useState([]);
+  const [selectedFileContent, setSelectedFileContent] = useState("");
+  const [selectedRepo, setSelectedRepo] = useState(null);
+
+    const getRepoFiles = async (repoName) => {
+    try {
+      setSelectedRepo(repoName);
+      setFiles([]);
+      setSelectedFileContent("");
+
+      const res = await fetch(
+        `https://api.github.com/repos/OfficialSaurabh/${repoName}/contents`
+      );
+      const data = await res.json();
+
+      if (Array.isArray(data)) {
+        setFiles(data);
+      } else {
+        console.error("Unexpected files response", data);
+      }
+    } catch (err) {
+      console.error("Failed to load files", err);
+    }
+  };
+
   if (repos.length === 0) {
     return (
       <div className="glass-card p-12 rounded-xl text-center">
@@ -66,7 +95,7 @@ export const RepoList = ({ repos }: RepoListProps) => {
                 </div>
               </div>
               <Button
-                // onClick={() => onSelectRepo(repo)}
+                onClick={() => onSelectRepo(repo)}
                 variant="outline"
                 className="border-primary/50 hover:bg-primary hover:text-primary-foreground transition-all shrink-0"
               >

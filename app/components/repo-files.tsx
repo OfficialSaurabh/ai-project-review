@@ -1,0 +1,130 @@
+import { CiFolderOn, CiFileOn } from "react-icons/ci";
+import { GoChevronRight } from "react-icons/go";
+import { Button } from "@/components/ui/button";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { useState } from "react";
+import { log } from "console";
+
+interface FileItem {
+  path: string;
+  type: "blob" | "tree";
+  sha: string;
+  size?: number;
+}
+
+interface FileExplorerProps {
+  files: FileItem[];
+  repoName: string;
+}
+
+export const FileExplorer = ({
+  files,
+  repoName,
+}: FileExplorerProps) => {
+  const getFileIcon = (file: FileItem) => {
+    if (file.type === "tree") {
+      return <CiFolderOn  className="w-4 h-4 text-primary" />;
+    }
+    return <CiFileOn  className="w-4 h-4 text-muted-foreground" />;
+  };
+
+  
+
+  const formatFileSize = (bytes?: number) => {
+    if (!bytes) return "";
+    if (bytes < 1024) return `${bytes} B`;
+    if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+    return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+  };
+
+  const [selectedFileContent, setSelectedFileContent] = useState("");
+  console.log("Selected File:", selectedFileContent);
+
+
+  const displayFiles = files.filter((f) => f.type === "blob");
+
+    const getFileContent = async (path) => {
+    if (!repoName) return;
+    try {
+      const res = await fetch(
+        `https://api.github.com/repos/OfficialSaurabh/${repoName}/contents/${path}`
+      );
+      const file = await res.json();
+
+      if (file && file.content) {
+        // GitHub returns base64 with newlines, remove them
+        const base64 = file.content.replace(/\n/g, "");
+        const decoded = typeof atob === "function" ? atob(base64) : "";
+        setSelectedFileContent(decoded);
+      } else {
+        setSelectedFileContent("// No content");
+      }
+    } catch (err) {
+      console.error("Failed to load file content", err);
+      setSelectedFileContent("// Error loading file");
+    }
+  };
+
+  return (
+    <div className="space-y-6 animate-in fade-in duration-500">
+      <div className="glass-card p-6 rounded-xl">
+        <div className="flex items-center justify-between mb-6">
+          <div>
+            <h2 className="text-2xl font-bold font-mono mb-1">{repoName}</h2>
+            <p className="text-muted-foreground">
+              {displayFiles.length} files found
+            </p>
+          </div>
+          <Button
+            className="bg-primary hover:bg-primary/90 text-primary-foreground glow-effect"
+          >
+            Review Full Project
+          </Button>
+        </div>
+
+        <ScrollArea className="h-[600px] pr-4">
+          <div className="space-y-2">
+            {displayFiles.map((file) => (
+              <div
+                key={file.sha}
+                className="glass-card p-4 rounded-lg hover:border-primary/50 transition-all group"
+              >
+                <div className="flex items-center justify-between gap-4">
+                  <div className="flex items-center gap-3 flex-1 min-w-0">
+                    {getFileIcon(file)}
+                    <div className="flex-1 min-w-0">
+                      <p className="font-mono text-sm truncate group-hover:text-primary transition-colors">
+                        {file.path}
+                      </p>
+                      {file.size && (
+                        <p className="text-xs text-muted-foreground mt-1">
+                          {formatFileSize(file.size)}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                  <Button onClick={ () =>getFileContent(file.path)} >
+                    Load Content
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="border-primary/50 hover:bg-primary hover:text-primary-foreground shrink-0"
+                  >
+                    <span className="flex items-center gap-1">
+                      Review File
+                      <GoChevronRight  className="w-3 h-3" />
+                    </span>
+                  </Button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </ScrollArea>
+        
+      </div>
+    </div>
+  );
+};
+
+export default FileExplorer;
