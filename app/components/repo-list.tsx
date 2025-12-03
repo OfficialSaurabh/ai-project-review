@@ -2,8 +2,8 @@
 import { IoGitBranchOutline } from "react-icons/io5";
 import { IoIosStarOutline } from "react-icons/io";
 // import { PiGitForkLight } from "react-icons/pi";
-// import { Button } from "@/components/ui/button";
-// import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 
 interface Repo {
   id: number;
@@ -51,9 +51,9 @@ export const RepoList = ({ repos }: RepoListProps) => {
                 </p>
                 <div className="flex items-center gap-4 text-sm text-muted-foreground">
                   {repo.language && (
-                    <a variant="secondary" className="font-mono">
+                    <Badge variant="secondary" className="font-mono">
                       {repo.language}
-                    </a>
+                    </Badge>
                   )}
                   <div className="flex items-center gap-1">
                     <IoIosStarOutline className="w-4 h-4" />
@@ -65,13 +65,13 @@ export const RepoList = ({ repos }: RepoListProps) => {
                   </div>
                 </div>
               </div>
-              <button
+              <Button
                 // onClick={() => onSelectRepo(repo)}
                 variant="outline"
                 className="border-primary/50 hover:bg-primary hover:text-primary-foreground transition-all shrink-0"
               >
                 Review Project
-              </button>
+              </Button>
             </div>
           </div>
         ))}
