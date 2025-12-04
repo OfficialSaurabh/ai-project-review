@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useState } from "react";
 import { AnalysisDashboard } from "./analysis-dashboard";
+import Loader from "./loader";
 
 interface FileItem {
   path: string;
@@ -24,7 +25,7 @@ export const FileExplorer = ({
   repoName,
   owner,
 }: FileExplorerProps) => {
-
+  const [isReviewLoading, setIsReviewLoading] = useState(false);
   const [selectedFileContent, setSelectedFileContent] = useState("");
   const [reviewData, setReviewData] = useState<AnalysisResponse | null>(null);
   const [showFile, setShowFile] = useState(true);
@@ -84,6 +85,7 @@ export const FileExplorer = ({
       if (!webhookUrl) {
         throw new Error("Missing env: NEXT_PUBLIC_REVIEW_WEBHOOK");
       }
+      setIsReviewLoading(true);
       const res = await fetch(webhookUrl,
         {
           method: "POST",
@@ -108,85 +110,97 @@ export const FileExplorer = ({
           documentationScore: data.file?.metrics?.documentationScore ?? 0,
           readability: data.file?.metrics?.readability ?? 0,
         },
-        topIssues: data.topIssues ?? [], 
+        topIssues: data.topIssues ?? [],
       };
 
       setReviewData(mappedResponse);
+      setIsReviewLoading(false);
       setIsReviewOpen(true);
-      setShowFile(false); 
+      setShowFile(false);
       console.log("Review API response:", data);
     } catch (err) {
       console.error("Error calling review API", err);
+      setIsReviewOpen(false);
+      setShowFile(true);
+      setReviewData(null);
+    }
+    finally {
+      setIsReviewLoading(false);
     }
   };
 
-     const handleCloseReview = () => {
+  const handleCloseReview = () => {
     setIsReviewOpen(false);
     setShowFile(true);
   };
   return (
     <div className="space-y-6 animate-in fade-in duration-500">
-      {/* Files UI */}
-      {showFile && (
-      <div className="glass-card p-6 rounded-xl">
-        <div className="flex items-center justify-between mb-6">
-          <div>
-            <h2 className="text-2xl font-bold font-mono mb-1">{repoName}</h2>
-            <p className="text-muted-foreground">
-              {displayFiles.length} files found
-            </p>
-          </div>
-          <Button
-            className="bg-primary hover:bg-primary/90 text-primary-foreground glow-effect"
-          >
-            Review Full Project
-          </Button>
+      {isReviewLoading && (
+        <div className="glass-card p-6 rounded-xl flex justify-center">
+          <Loader />
         </div>
+      )}
+      {/* Files UI */}
+      {!isReviewLoading && showFile && (
+        <div className="glass-card p-6 rounded-xl">
+          <div className="flex items-center justify-between mb-6">
+            <div>
+              <h2 className="text-2xl font-bold font-mono mb-1">{repoName}</h2>
+              <p className="text-muted-foreground">
+                {displayFiles.length} files found
+              </p>
+            </div>
+            <Button
+              className="bg-primary hover:bg-primary/90 text-primary-foreground glow-effect"
+            >
+              Review Full Project
+            </Button>
+          </div>
 
-        <ScrollArea className="h-[600px] pr-4">
-          <div className="space-y-2">
-            {displayFiles.map((file) => (
-              <div
-                key={file.sha}
-                className="glass-card p-4 rounded-lg hover:border-primary/50 transition-all group"
-              >
-                <div className="flex items-center justify-between gap-4">
-                  <div className="flex items-center gap-3 flex-1 min-w-0">
-                    {getFileIcon(file)}
-                    <div className="flex-1 min-w-0">
-                      <p className="font-mono text-sm truncate group-hover:text-primary transition-colors">
-                        {file.path}
-                      </p>
-                      {file.size && (
-                        <p className="text-xs text-muted-foreground mt-1">
-                          {formatFileSize(file.size)}
+          <ScrollArea className="h-[600px] pr-4">
+            <div className="space-y-2">
+              {displayFiles.map((file) => (
+                <div
+                  key={file.sha}
+                  className="glass-card p-4 rounded-lg hover:border-primary/50 transition-all group"
+                >
+                  <div className="flex items-center justify-between gap-4">
+                    <div className="flex items-center gap-3 flex-1 min-w-0">
+                      {getFileIcon(file)}
+                      <div className="flex-1 min-w-0">
+                        <p className="font-mono text-sm truncate group-hover:text-primary transition-colors">
+                          {file.path}
                         </p>
-                      )}
+                        {file.size && (
+                          <p className="text-xs text-muted-foreground mt-1">
+                            {formatFileSize(file.size)}
+                          </p>
+                        )}
+                      </div>
                     </div>
-                  </div>
-                  {/* <Button onClick={ () =>getFileContent(file.path)} >
+                    {/* <Button onClick={ () =>getFileContent(file.path)} >
                     Load Content
                   </Button> */}
-                  <Button
-                    variant="outline"
-                    onClick={() => handleReviewFile(file.path)}
-                    size="sm"
-                    className="border-primary/50 hover:bg-primary hover:text-primary-foreground shrink-0"
-                  >
-                    <span className="flex items-center gap-1">
-                      Review File
-                      <GoChevronRight className="w-3 h-3" />
-                    </span>
-                  </Button>
+                    <Button
+                      variant="outline"
+                      onClick={() => handleReviewFile(file.path)}
+                      size="sm"
+                      className="border-primary/50 hover:bg-primary hover:text-primary-foreground shrink-0"
+                    >
+                      <span className="flex items-center gap-1">
+                        Review File
+                        <GoChevronRight className="w-3 h-3" />
+                      </span>
+                    </Button>
+                  </div>
                 </div>
-              </div>
-            ))}
-          </div>
-        </ScrollArea>
-      </div>
-        )}
+              ))}
+            </div>
+          </ScrollArea>
+        </div>
+      )}
 
-      {isReviewOpen && reviewData && (
+      {!isReviewLoading && isReviewOpen && reviewData && (
         <AnalysisDashboard response={reviewData} onClose={handleCloseReview} />
       )}
     </div>

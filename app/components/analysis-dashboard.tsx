@@ -173,9 +173,11 @@ export const AnalysisDashboard = ({
               <InsightCard key={index} {...insight} />
             ))
           ) : (
+            <div className="glass-card p-6 rounded-xl hover:border-border transition-all">
             <p className="text-sm text-muted-foreground">
               No structure issues found.
             </p>
+            </div>
           )}
         </TabsContent>
 
@@ -185,9 +187,11 @@ export const AnalysisDashboard = ({
               <InsightCard key={index} {...insight} />
             ))
           ) : (
+            <div className="glass-card p-6 rounded-xl hover:border-border transition-all">
             <p className="text-sm text-muted-foreground">
               No quality issues found.
             </p>
+            </div>
           )}
         </TabsContent>
 
@@ -197,9 +201,11 @@ export const AnalysisDashboard = ({
               <InsightCard key={index} {...insight} />
             ))
           ) : (
+            <div className="glass-card p-6 rounded-xl hover:border-border transition-all">
             <p className="text-sm text-muted-foreground">
               No documentation issues found.
             </p>
+            </div>
           )}
         </TabsContent>
       </Tabs>
