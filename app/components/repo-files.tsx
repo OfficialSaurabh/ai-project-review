@@ -108,6 +108,7 @@ export const FileExplorer = ({
           documentationScore: data.file?.metrics?.documentationScore ?? 0,
           readability: data.file?.metrics?.readability ?? 0,
         },
+        topIssues: data.topIssues ?? [], 
       };
 
       setReviewData(mappedResponse);

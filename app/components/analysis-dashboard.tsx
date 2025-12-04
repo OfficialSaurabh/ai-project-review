@@ -21,78 +21,31 @@ interface AnalysisDashboardProps {
   onClose: () => void;
 }
 
+type InsightType = "success" | "warning" | "error" | "info";
+
+const mapSeverityToType = (severity: string): InsightType => {
+  const normalized = severity.toLowerCase();
+  if (normalized === "major" || normalized === "critical") return "error";
+  if (normalized === "minor" || normalized === "warning") return "warning";
+  return "info";
+};
+
 export const AnalysisDashboard = ({ response, onClose, }: AnalysisDashboardProps) => {
   const [isAnalyzing, setIsAnalyzing] = useState(false);
 
   // Mock data - in real implementation, this would come from actual analysis
-  const mockAnalysis = {
-    overallScore: 78,
-    codeQuality: 85,
-    documentation: 65,
-    security: 82,
-    insights: {
-      structure: [
-        {
-          category: "Architecture",
-          type: "success" as const,
-          title: "Well-organized component structure",
-          description: "Components follow a clear hierarchical pattern with proper separation of concerns.",
-          suggestions: ["Consider implementing a feature-based folder structure for larger components"],
-        },
-        {
-          category: "Dependencies",
-          type: "warning" as const,
-          title: "Outdated dependencies detected",
-          description: "Some packages are several versions behind their latest releases.",
-          suggestions: [
-            "Update React from 18.2.0 to 18.3.1",
-            "Update TypeScript to latest version",
-          ],
-        },
-      ],
-      quality: [
-        {
-          category: "Code Quality",
-          type: "success" as const,
-          title: "Consistent code style",
-          description: "ESLint configuration is properly set up and code follows best practices.",
-          suggestions: ["Add Prettier for automatic formatting"],
-        },
-        {
-          category: "Testing",
-          type: "error" as const,
-          title: "No test coverage found",
-          description: "The project lacks automated tests which could lead to bugs in production.",
-          suggestions: [
-            "Set up Jest and React Testing Library",
-            "Aim for at least 70% code coverage",
-            "Start with critical user flows",
-          ],
-        },
-      ],
-      documentation: [
-        {
-          category: "README",
-          type: "warning" as const,
-          title: "Basic README present",
-          description: "README exists but lacks detailed setup instructions and contribution guidelines.",
-          suggestions: [
-            "Add installation instructions",
-            "Include usage examples",
-            "Add contributing guidelines",
-          ],
-        },
-        {
-          category: "Comments",
-          type: "info" as const,
-          title: "Code documentation could be improved",
-          description: "Complex functions would benefit from JSDoc comments.",
-          suggestions: ["Add JSDoc comments to public APIs", "Document complex algorithms"],
-        },
-      ],
-    },
-  };
 
+
+   const issueInsights = (response.topIssues ?? []).slice(0, 4).map((issue) => ({
+    category: issue.type,
+    type: mapSeverityToType(issue.severity),
+    title: `Line ${issue.line} – ${issue.type}`,
+    description: issue.message,
+    suggestions: [] as string[], // you can wire real suggestions later
+  }));
+
+  console.log("Issue Insights:", issueInsights);
+  
   const handleFileReview = () => {
     setIsAnalyzing(true);
     setTimeout(() => {
@@ -161,19 +114,19 @@ export const AnalysisDashboard = ({ response, onClose, }: AnalysisDashboardProps
         </TabsList>
 
         <TabsContent value="structure" className="space-y-4">
-          {mockAnalysis.insights.structure.map((insight, index) => (
+          {issueInsights.map((insight, index) => (
             <InsightCard key={index} {...insight} />
           ))}
         </TabsContent>
 
         <TabsContent value="quality" className="space-y-4">
-          {mockAnalysis.insights.quality.map((insight, index) => (
+          {issueInsights.map((insight, index) => (
             <InsightCard key={index} {...insight} />
           ))}
         </TabsContent>
 
         <TabsContent value="docs" className="space-y-4">
-          {mockAnalysis.insights.documentation.map((insight, index) => (
+          {issueInsights.map((insight, index) => (
             <InsightCard key={index} {...insight} />
           ))}
         </TabsContent>
