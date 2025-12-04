@@ -12,11 +12,19 @@ interface AnalysisMetrics {
   readability: number;
 }
 
+interface TopIssue {
+  line: number | null;
+  severity: string;
+  type: string;
+  message: string;
+}
+
 interface AnalysisDashboardProps {
   response: {
     project: string;
     overallFileScore: number;
     metrics: AnalysisMetrics;
+    topIssues?: TopIssue[]; // <-- you ARE using this
   };
   onClose: () => void;
 }
@@ -30,22 +38,62 @@ const mapSeverityToType = (severity: string): InsightType => {
   return "info";
 };
 
-export const AnalysisDashboard = ({ response, onClose, }: AnalysisDashboardProps) => {
+// Decide which tab an issue belongs to, based on its type
+const categorizeIssue = (
+  category: string
+): "structure" | "quality" | "docs" => {
+  const t = category.toLowerCase();
+  if (
+    t.includes("security") ||
+    t.includes("maintainability") ||
+    t.includes("performance") ||
+    t.includes("complexity") ||
+    t.includes("correctness")
+  ) {
+    return "quality";
+  }
+
+  if (
+    t.includes("documentation") ||
+    t.includes("readme") ||
+    t.includes("comment") ||
+    t.includes("doc")
+  ) {
+    return "docs";
+  }
+
+  return "structure";
+};
+
+export const AnalysisDashboard = ({
+  response,
+  onClose,
+}: AnalysisDashboardProps) => {
   const [isAnalyzing, setIsAnalyzing] = useState(false);
 
-  // Mock data - in real implementation, this would come from actual analysis
+  // Flatten topIssues -> generic insight objects (max 4)
+  const issueInsights = (response.topIssues ?? [])
+    .slice(0, 4)
+    .map((issue) => ({
+      category: issue.type,
+      type: mapSeverityToType(issue.severity),
+      title: `Line ${issue.line ?? "N/A"} – ${issue.type}`,
+      description: issue.message,
+      suggestions: [] as string[],
+    }));
 
+  // Group insights into the three buckets
+  const grouped = {
+    structure: [] as typeof issueInsights,
+    quality: [] as typeof issueInsights,
+    docs: [] as typeof issueInsights,
+  };
 
-   const issueInsights = (response.topIssues ?? []).slice(0, 4).map((issue) => ({
-    category: issue.type,
-    type: mapSeverityToType(issue.severity),
-    title: `Line ${issue.line} – ${issue.type}`,
-    description: issue.message,
-    suggestions: [] as string[], // you can wire real suggestions later
-  }));
+  issueInsights.forEach((insight) => {
+    const bucket = categorizeIssue(insight.category);
+    grouped[bucket].push(insight);
+  });
 
-  console.log("Issue Insights:", issueInsights);
-  
   const handleFileReview = () => {
     setIsAnalyzing(true);
     setTimeout(() => {
@@ -58,7 +106,9 @@ export const AnalysisDashboard = ({ response, onClose, }: AnalysisDashboardProps
       <div className="glass-card p-6 rounded-xl">
         <div className="flex items-center justify-between mb-6">
           <div>
-            <h2 className="text-2xl font-bold font-mono mb-1">{response.project}</h2>
+            <h2 className="text-2xl font-bold font-mono mb-1">
+              {response.project}
+            </h2>
             <p className="text-muted-foreground">Project Analysis</p>
           </div>
           <Button
@@ -70,65 +120,87 @@ export const AnalysisDashboard = ({ response, onClose, }: AnalysisDashboardProps
           >
             ×
           </Button>
-          {/* <div className="flex gap-3">
-            <Button
-              variant="outline"
-              onClick={handleFileReview}
-              disabled={isAnalyzing}
-              className="border-primary/50 hover:bg-primary hover:text-primary-foreground"
-            >
-              {isAnalyzing ? "Analyzing..." : "Review This File"}
-            </Button>
-            <Button
-              onClick={handleFileReview}
-              disabled={isAnalyzing}
-              className="bg-primary hover:bg-primary/90 text-primary-foreground glow-effect"
-            >
-              {isAnalyzing ? "Analyzing..." : "Review Full Project"}
-            </Button>
-          </div> */}
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-          <HealthScore score={response.overallFileScore} label="Overall Health" />
-          <HealthScore score={response.metrics.testCoverageEstimate} label="Code Coverage" />
-          <HealthScore score={response.metrics.documentationScore} label="Documentation" />
-          <HealthScore score={response.metrics.readability} label="Readability" />
+          <HealthScore
+            score={response.overallFileScore}
+            label="Overall Health"
+          />
+          <HealthScore
+            score={response.metrics.testCoverageEstimate}
+            label="Code Coverage"
+          />
+          <HealthScore
+            score={response.metrics.documentationScore}
+            label="Documentation"
+          />
+          <HealthScore
+            score={response.metrics.readability}
+            label="Readability"
+          />
         </div>
       </div>
 
       <Tabs defaultValue="structure" className="space-y-6">
         <TabsList className="glass-card p-1 grid w-full grid-cols-3">
-          <TabsTrigger value="structure" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+          <TabsTrigger
+            value="structure"
+            className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
+          >
             <LuFileCode2 className="w-4 h-4 mr-2" />
             Structure
           </TabsTrigger>
-          <TabsTrigger value="quality" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+          <TabsTrigger
+            value="quality"
+            className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
+          >
             <LuZap className="w-4 h-4 mr-2" />
             Quality
           </TabsTrigger>
-          <TabsTrigger value="docs" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+          <TabsTrigger
+            value="docs"
+            className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
+          >
             <HiOutlineBookOpen className="w-4 h-4 mr-2" />
             Documentation
           </TabsTrigger>
         </TabsList>
 
         <TabsContent value="structure" className="space-y-4">
-          {issueInsights.map((insight, index) => (
-            <InsightCard key={index} {...insight} />
-          ))}
+          {grouped.structure.length > 0 ? (
+            grouped.structure.map((insight, index) => (
+              <InsightCard key={index} {...insight} />
+            ))
+          ) : (
+            <p className="text-sm text-muted-foreground">
+              No structure issues found.
+            </p>
+          )}
         </TabsContent>
 
         <TabsContent value="quality" className="space-y-4">
-          {issueInsights.map((insight, index) => (
-            <InsightCard key={index} {...insight} />
-          ))}
+          {grouped.quality.length > 0 ? (
+            grouped.quality.map((insight, index) => (
+              <InsightCard key={index} {...insight} />
+            ))
+          ) : (
+            <p className="text-sm text-muted-foreground">
+              No quality issues found.
+            </p>
+          )}
         </TabsContent>
 
         <TabsContent value="docs" className="space-y-4">
-          {issueInsights.map((insight, index) => (
-            <InsightCard key={index} {...insight} />
-          ))}
+          {grouped.docs.length > 0 ? (
+            grouped.docs.map((insight, index) => (
+              <InsightCard key={index} {...insight} />
+            ))
+          ) : (
+            <p className="text-sm text-muted-foreground">
+              No documentation issues found.
+            </p>
+          )}
         </TabsContent>
       </Tabs>
     </div>
