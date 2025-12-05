@@ -1,3 +1,4 @@
+"use client";
 import { CiFolderOn, CiFileOn } from "react-icons/ci";
 import { GoChevronRight } from "react-icons/go";
 import { Button } from "@/components/ui/button";
@@ -5,6 +6,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { useState } from "react";
 import { AnalysisDashboard } from "./analysis-dashboard";
 import Loader from "./loader";
+import { toast } from "@/components/ui/sonner";
 
 interface FileItem {
   path: string;
@@ -120,6 +122,7 @@ export const FileExplorer = ({
       console.log("Review API response:", data);
     } catch (err) {
       console.error("Error calling review API", err);
+      toast("Event has been created.")
       setIsReviewOpen(false);
       setShowFile(true);
       setReviewData(null);
@@ -152,6 +155,7 @@ export const FileExplorer = ({
             </div>
             <Button
               className="bg-primary hover:bg-primary/90 text-primary-foreground glow-effect"
+              onClick={() => toast("Test toast from /test")}
             >
               Review Full Project
             </Button>
