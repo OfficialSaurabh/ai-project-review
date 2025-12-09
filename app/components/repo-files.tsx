@@ -22,6 +22,9 @@ interface FileExplorerProps {
   webhookUrl?: string;
 }
 
+const imageExtensions = [".png", ".jpg", ".jpeg", ".gif", ".svg", ".webp", ".bmp"];
+
+
 export const FileExplorer = ({
   files,
   repoName,
@@ -39,6 +42,9 @@ export const FileExplorer = ({
     return <CiFileOn className="w-4 h-4 text-muted-foreground" />;
   };
 
+  const isImageFile = (path: string) => {
+    return imageExtensions.some(ext => path.toLowerCase().endsWith(ext));
+  };
 
 
   const formatFileSize = (bytes?: number) => {
@@ -139,7 +145,7 @@ export const FileExplorer = ({
   return (
     <div className="space-y-6 animate-in fade-in duration-500">
       {isReviewLoading && (
-          <Loader />
+        <Loader />
       )}
       {/* Files UI */}
       {!isReviewLoading && showFile && (
@@ -183,17 +189,20 @@ export const FileExplorer = ({
                     {/* <Button onClick={ () =>getFileContent(file.path)} >
                     Load Content
                   </Button> */}
-                    <Button
-                      variant="outline"
-                      onClick={() => handleReviewFile(file.path)}
-                      size="sm"
-                      className="border-primary/50 hover:bg-primary hover:text-primary-foreground shrink-0"
-                    >
-                      <span className="flex items-center gap-1">
-                        Review File
-                        <GoChevronRight className="w-3 h-3" />
-                      </span>
-                    </Button>
+                    {!isImageFile(file.path) && (
+                      <Button
+                        variant="outline"
+                        onClick={() => handleReviewFile(file.path)}
+                        size="sm"
+                        className="border-primary/50 hover:bg-primary hover:text-primary-foreground shrink-0"
+                      >
+                        <span className="flex items-center gap-1">
+                          Review File
+                          <GoChevronRight className="w-3 h-3" />
+                        </span>
+                      </Button>
+                    )}
+
                   </div>
                 </div>
               ))}
