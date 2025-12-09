@@ -6,6 +6,7 @@ import { useEffect, useState } from "react";
 import { useRouter, useParams } from "next/navigation";
 import NavBar from "@/app/components/nav-bar";
 import RepoFiles from "@/app/components/repo-files";
+import Loader from "@/app/components/loader";
 
 interface FileItem {
   path: string;
@@ -125,7 +126,7 @@ export default function RepoFilesPage() {
           </div>
 
           {isLoading ? (
-            <p>Loading files...</p>
+            <Loader />
           ) : (
             <RepoFiles files={files} repoName={name} owner={owner} />
           )}

@@ -4,6 +4,7 @@ import { useSession } from "next-auth/react";
 import { useEffect, useState } from "react";
 import NavBar from "./components/nav-bar";
 import RepoList from "./components/repo-list";
+import Hero from "./components/hero";
 
 interface Repo {
   id: number;
@@ -22,18 +23,33 @@ interface Repo {
 export default function Home() {
   const { data: session } = useSession();
   const [repos, setRepos] = useState<Repo[]>([]);
+  const [reposLoading, setReposLoading] = useState(false);
 
-  useEffect(() => {
-    if (session?.accessToken) {
-      fetch("https://api.github.com/user/repos", {
+useEffect(() => {
+  if (!session?.accessToken) return;
+
+  setReposLoading(true);
+
+  const fetchRepos = async () => {
+    try {
+      const res = await fetch("https://api.github.com/user/repos?sort=updated&direction=desc", {
         headers: {
           Authorization: `Bearer ${session.accessToken}`,
         },
-      })
-        .then((res) => res.json())
-        .then((data) => setRepos(data));
+      });
+
+      const data = await res.json();
+      setRepos(data);
+    } catch (err) {
+      console.error("Failed to fetch repos", err);
+    } finally {
+      setReposLoading(false);
     }
-  }, [session]);
+  };
+
+  fetchRepos();
+}, [session]);
+
 
   return (
     <>
@@ -50,9 +66,9 @@ export default function Home() {
           </div>
 
           {session ? (
-            <RepoList repos={repos} />
+            <RepoList repos={repos} reposLoading={reposLoading} />
           ) : (
-            <>Test</>
+            <Hero/>
           )}
         </div>
       </div>

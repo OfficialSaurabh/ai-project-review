@@ -8,7 +8,7 @@ import { FaRegBell } from "react-icons/fa";
 import { LuLogIn } from "react-icons/lu";
 
 const navigation = [
-  { name: 'Home', href: '#', current: true },
+  // { name: 'Home', href: '#', current: true },
 ]
 
 function classNames(...classes: (string | undefined | false)[]): string {
@@ -99,7 +99,7 @@ export default function NavBar() {
                 <MenuItem>
                   <a
                     href="#"
-                    onClick={() => signOut()}
+                    onClick={() => signOut({ callbackUrl: "/" })}
                     className="block px-4 py-2 text-sm text-gray-300 data-focus:bg-white/5 data-focus:outline-hidden"
                   >
                     Sign out

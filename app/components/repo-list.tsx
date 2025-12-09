@@ -2,6 +2,10 @@
 "use client";
 
 import Link from "next/link";
+import Loader from "./loader";
+import { Badge } from "@/components/ui/badge"
+import { IoIosStarOutline } from "react-icons/io";
+import { GoRepoForked } from "react-icons/go";
 
 interface Repo {
   id: number;
@@ -12,12 +16,21 @@ interface Repo {
   stargazers_count: number;
   forks_count: number;
   default_branch: string;
+  reposLoading?: boolean;
   owner: {
     login: string;
   };
 }
 
-export default function RepoList({ repos }: { repos: Repo[] }) {
+export default function RepoList({
+  repos,
+  reposLoading,
+}: Readonly<{ repos: Repo[]; reposLoading?: boolean }>) {
+    if (reposLoading) {
+    return <Loader />
+    ;
+  }
+
   if (!repos?.length) return <p>No repositories found.</p>;
 
   return (
@@ -30,19 +43,19 @@ export default function RepoList({ repos }: { repos: Repo[] }) {
         >
           <div className="glass-card p-6 rounded-xl hover:border-primary/50 transition-all group" >
 
-          <h4 className="text-lg font-semibold font-mono mb-2 truncate group-hover:text-primary transition-colors">
-                  {repo.name}
-                </h4>
-          {repo.description && (
-            <p className="text-sm text-muted-foreground mt-1">
-              {repo.description}
-            </p>
-          )}
-          <div className="text-xs text-muted-foreground mt-2 flex gap-4 ">
-            <span>{repo.language}</span>
-            <span>★ {repo.stargazers_count}</span>
-            <span>⑂ {repo.forks_count}</span>
-          </div>
+            <h4 className="text-lg font-semibold font-mono mb-2 truncate group-hover:text-primary transition-colors">
+              {repo.name}
+            </h4>
+            {repo.description && (
+              <p className="text-sm text-muted-foreground mt-1">
+                {repo.description}
+              </p>
+            )}
+            <div className="text-xs text-muted-foreground mt-2 flex gap-4 ">
+              <Badge variant="outline">{repo.language}</Badge>
+              <span className="flex items-center gap-x-1 "><IoIosStarOutline /> {repo.stargazers_count}</span>
+              <span className="flex items-center gap-x-1 "><GoRepoForked /> {repo.forks_count}</span>
+            </div>
           </div>
         </Link>
       ))}

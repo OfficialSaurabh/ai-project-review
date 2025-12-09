@@ -139,9 +139,7 @@ export const FileExplorer = ({
   return (
     <div className="space-y-6 animate-in fade-in duration-500">
       {isReviewLoading && (
-        <div className="glass-card p-6 rounded-xl flex justify-center">
           <Loader />
-        </div>
       )}
       {/* Files UI */}
       {!isReviewLoading && showFile && (
