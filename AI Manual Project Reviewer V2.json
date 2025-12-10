@@ -1,0 +1,500 @@
+{
+  "name": "AI Manual Project Reviewer (Gemini - File & Full)",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "review",
+        "responseMode": "lastNode",
+        "options": {}
+      },
+      "name": "Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [
+        144,
+        192
+      ],
+      "webhookId": "review-gemini-webhook-id",
+      "id": "5ec9030b-4fbd-4a01-83b2-445bc9baac23"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{ $json[\"body\"][\"action\"] }}",
+              "value2": "file"
+            }
+          ]
+        },
+        "combineOperation": "any"
+      },
+      "name": "If Action is File",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [
+        368,
+        192
+      ],
+      "id": "e4b7d445-050e-4442-8fc0-6868ad9fb665"
+    },
+    {
+      "parameters": {
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "githubOAuth2Api",
+        "url": "={{`https://raw.githubusercontent.com/${$json[\"body\"][\"owner\"]}/${$json[\"body\"][\"repo\"]}/${$json[\"body\"][\"ref\"] || 'main'}/${$json[\"body\"][\"filename\"]}`}}",
+        "responseFormat": "string",
+        "options": {}
+      },
+      "name": "Get File Content",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 2,
+      "position": [
+        576,
+        128
+      ],
+      "id": "3a6b20cb-4204-43ec-9375-f21d361bbd21",
+      "credentials": {
+        "githubOAuth2Api": {
+          "id": "Lg6Z8IaehkLJ55hk",
+          "name": "GitHub account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "functionCode": "// Get data from Webhook node (robustly)\nlet webhookRoot = {};\n\nif ($node[\"Webhook\"] && $node[\"Webhook\"].json) {\n  webhookRoot = $node[\"Webhook\"].json;\n}\n\n// Support both shapes:\n// 1) { body: { owner, repo, ref, action, filename } }   (your current case)\n// 2) { owner, repo, ref, action, filename }             (if you later change Webhook to \"JSON only\")\nconst payload = webhookRoot.body || webhookRoot;\n\nconst owner = payload.owner;\nconst repo = payload.repo;\nconst ref = payload.ref || 'main';\nconst action = payload.action || 'file';\nconst filename = payload.filename;\n\nif (!owner || !repo || !filename) {\n  throw new Error('owner, repo, filename are required');\n}\n\n// Content from previous HTTP node (Get File Content)\nconst current = $json;\nconst contentRaw = current.data ?? current.body ?? current;\nlet fileContent = typeof contentRaw === 'string' ? current : JSON.stringify(contentRaw);\n\n// Hard truncate very large files\nconst MAX = 8000;\nif (fileContent.length > MAX) {\n  fileContent =\n    fileContent.slice(0, MAX / 2) +\n    '\\n\\n// ... file truncated ...\\n\\n' +\n    fileContent.slice(-MAX / 2);\n}\n\nconst language = (filename.split('.').pop() || 'text');\n\nconst prompt =\n  'You are a senior software engineer and code reviewer.\\n' +\n  'Analyze the following code file for structure, maintainability, correctness, security, performance, and documentation.\\n' +\n  'Return ONLY a JSON object with this schema (no extra text):\\n' +\n  '{\"path\": string,' +\n  ' \"issues\": [{\"line\": number|null, \"severity\": \"critical\"|\"major\"|\"minor\", \"type\": string, \"message\": string}], ' +\n  ' \"suggestions\": [{\"title\": string, \"explanation\": string, \"diff_example\": string|null}], ' +\n  ' \"metrics\": {\"complexity\": number, \"readability\": number, \"testCoverageEstimate\": number, \"documentationScore\": number}, ' +\n  ' \"overallFileScore\": number }\\n\\n' +\n  `Project: ${owner}/${repo}@${ref}\\n` +\n  `File: ${filename}\\n` +\n  `Language: ${language}\\n\\n` +\n  'Code:\\n' +\n  fileContent;\n\nconst geminiBody = {\n  contents: [\n    {\n      role: 'user',\n      parts: [{ text: prompt }],\n    },\n  ],\n  generationConfig: {\n    response_mime_type: 'application/json',\n  },\n};\n\nreturn [\n  {\n    json: {\n      owner,\n      repo,\n      ref,\n      action,\n      filename,\n      geminiBody,\n    },\n  },\n];\n"
+      },
+      "name": "Prepare Gemini Body",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [
+        800,
+        128
+      ],
+      "id": "7ee75732-7847-43b6-9f4e-253325686055"
+    },
+    {
+      "parameters": {
+        "url": "={{`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${$env.GEMINI_API_KEY}`}}",
+        "jsonParameters": true,
+        "options": {}
+      },
+      "name": "Call Gemini",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 2,
+      "position": [
+        1040,
+        -48
+      ],
+      "id": "53ee796a-bf3a-4fe2-8f07-5bbb648b7aa9"
+    },
+    {
+      "parameters": {
+        "functionCode": "// ---------- 1. META FROM PREPARE GEMINI BODY ----------\nlet meta = {};\nif ($node[\"Prepare Gemini Body\"] && $node[\"Prepare Gemini Body\"].json) {\n  meta = $node[\"Prepare Gemini Body\"].json;\n}\nmeta = meta || {};\n\n// ---------- 2. RAW MODEL RESPONSE ----------\nconst resp = $json;\n\nlet rawText = \"\";\n\ntry {\n  // Gemini-style: candidates[0].content.parts[0].text\n  let candidate =\n    resp.candidates && Array.isArray(resp.candidates) && resp.candidates[0];\n\n  let part =\n    candidate &&\n    candidate.content &&\n    Array.isArray(candidate.content.parts) &&\n    candidate.content.parts[0];\n\n  if (part && typeof part.text === \"string\") {\n    rawText = part.text;\n  } else if (typeof resp.text === \"string\") {\n    // Some clients wrap directly as { text: \"...\" }\n    rawText = resp.text;\n  } else {\n    // Fallback: just stringify whatever we got\n    rawText = JSON.stringify(resp);\n  }\n} catch (e) {\n  rawText = JSON.stringify(resp);\n}\n\n// Ensure it's a string\nif (typeof rawText !== \"string\") {\n  rawText = String(rawText ?? \"\");\n}\nrawText = rawText.trim();\n\n// ---------- 3. UNWRAP JSON-INSIDE-JSON ONCE OR TWICE ----------\n// Handle cases like:\n// rawText = \"{\\\"text\\\":\\\"```json\\\\n{...}\\\\n```\\\"}\"\n// or rawText = \"\\\"```json\\\\n{...}\\\\n```\\\"\"\n\nfunction unwrapOnce(text) {\n  if (typeof text !== \"string\") return text;\n\n  // Quick heuristic: looks like JSON\n  if (!text.startsWith(\"{\") && !text.startsWith(\"[\") && !text.startsWith(\"\\\"\")) {\n    return text;\n  }\n\n  try {\n    const parsed = JSON.parse(text);\n\n    // Case 1: it was just a JSON-encoded string\n    if (typeof parsed === \"string\") {\n      return parsed;\n    }\n\n    // Case 2: object with a `text` field\n    if (parsed && typeof parsed.text === \"string\") {\n      return parsed.text;\n    }\n\n    // Otherwise, keep original\n    return text;\n  } catch (e) {\n    return text;\n  }\n}\n\n// Try to unwrap up to 2 levels\nrawText = unwrapOnce(rawText);\nrawText = unwrapOnce(rawText);\n\n// ---------- 4. NORMALIZE RAW TEXT ----------\n\n// Some models prepend \"text:\" before the fenced JSON\nif (rawText.toLowerCase().startsWith(\"text:\")) {\n  rawText = rawText.slice(5).trim();\n}\n\n// Remove code fences; this may also strip ``` inside diff blocks,\n// which is fine for our parsing purposes.\nrawText = rawText\n  .replace(/```json/gi, \"\")\n  .replace(/```diff/gi, \"\")\n  .replace(/```/g, \"\")\n  .trim();\n\n// ---------- 5. TRY PARSE DIRECTLY, THEN FALL BACK TO BRACE SLICE ----------\n\nlet fileReview;\nlet parseError = null;\n\n// First attempt: direct parse\ntry {\n  fileReview = JSON.parse(rawText);\n} catch (e1) {\n  // Fallback: extract from first '{' to last '}'\n  const firstBrace = rawText.indexOf(\"{\");\n  const lastBrace = rawText.lastIndexOf(\"}\");\n\n  if (firstBrace !== -1 && lastBrace !== -1 && lastBrace > firstBrace) {\n    const chunk = rawText.slice(firstBrace, lastBrace + 1);\n    try {\n      fileReview = JSON.parse(chunk);\n    } catch (e2) {\n      parseError = e2.message;\n      fileReview = {\n        rawText,\n        jsonChunk: chunk,\n        parseError,\n      };\n    }\n  } else {\n    parseError = e1.message;\n    fileReview = {\n      rawText,\n      jsonChunk: null,\n      parseError,\n    };\n  }\n}\n\n// ---------- 6. BUILD DERIVED FIELDS ----------\n\nconst issues = Array.isArray(fileReview.issues) ? fileReview.issues : [];\nconst overall =\n  typeof fileReview.overallFileScore === \"number\"\n    ? fileReview.overallFileScore\n    : 0;\n\nlet project;\nif (meta.owner && meta.repo && meta.ref) {\n  project = `${meta.owner}/${meta.repo}@${meta.ref}`;\n}\n\n// ---------- 7. RETURN RESULT ----------\n\nreturn [\n  {\n    json: {\n      project,\n      mode: \"file\",\n      filename: meta.filename,\n      overallProjectScore: overall,\n      topIssues: issues,\n      file: fileReview, // now should be the real parsed object\n    },\n  },\n];\n"
+      },
+      "name": "Build Response",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [
+        1344,
+        128
+      ],
+      "id": "6306b3e6-fdd2-46a9-a5df-2cc887359ca4"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{ $json[\"body\"][\"action\"] }}",
+              "value2": "full"
+            }
+          ]
+        }
+      },
+      "name": "If Action is Full",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [
+        368,
+        416
+      ],
+      "id": "c3ef2c05-b907-42d3-8602-b6f137e1f479"
+    },
+    {
+      "parameters": {
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "githubOAuth2Api",
+        "url": "={{ `https://api.github.com/repos/${$json.body.owner}/${$json.body.repo}/git/trees/${$json.body.ref || 'main'}?recursive=1` }}\n",
+        "options": {}
+      },
+      "name": "Get Repo Tree (Full)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 2,
+      "position": [
+        576,
+        416
+      ],
+      "id": "74e1d04b-e8fe-4ea8-adb3-a1f456b6121a",
+      "credentials": {
+        "githubOAuth2Api": {
+          "id": "Lg6Z8IaehkLJ55hk",
+          "name": "GitHub account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "functionCode": "// Input: output from \"Get Repo Tree (Full)\"\nconst data = $json;\nconst tree = Array.isArray(data.tree) ? data.tree : [];\n\n// 1) Filter the files from the GitHub tree\nconst allowedExt = /\\.(js|ts|jsx|tsx|py|java|go|php|rb|cs|json|md)$/;\nconst skipPrefixes = ['node_modules/', 'dist/', 'build/'];\n\nconst files = tree\n  .filter(t => t.type === 'blob') // only actual files\n  .filter(t => allowedExt.test(t.path)) // allowed extensions\n  .filter(t => !skipPrefixes.some(p => t.path.startsWith(p))) // skip junk dirs\n  .filter(t => !t.path.endsWith('package-lock.json'))\n  .slice(0, 20); // safety cap\n\n// 2) Get owner/repo/ref from the Webhook node\nif (!$node['Webhook'] || !$node['Webhook'].json) {\n  throw new Error('Webhook node data not found. Make sure this workflow is executed via the Webhook trigger.');\n}\n\nconst webhookRoot = $node['Webhook'].json;\nconst payload = webhookRoot.body || webhookRoot;\n\nconst owner = payload.owner;\nconst repo  = payload.repo;\nconst ref   = payload.ref || 'main';\n\nif (!owner || !repo) {\n  throw new Error(\n    'Missing owner/repo in webhook payload. Got: ' + JSON.stringify(payload, null, 2)\n  );\n}\n\n// 3) Emit one item per file\nreturn files.map(f => ({\n  json: {\n    owner,\n    repo,\n    ref,\n    path: f.path,\n  },\n}));\n"
+      },
+      "name": "Filter Files (Full)",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [
+        800,
+        416
+      ],
+      "id": "6c12c588-81d7-4385-aa07-65b9fbfd5392"
+    },
+    {
+      "parameters": {
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "githubOAuth2Api",
+        "url": "={{`https://raw.githubusercontent.com/${$json[\"owner\"]}/${$json[\"repo\"]}/${$json[\"ref\"]}/${$json[\"path\"]}`}}",
+        "responseFormat": "string",
+        "options": {}
+      },
+      "name": "Get File Content (Full)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 2,
+      "position": [
+        1040,
+        416
+      ],
+      "id": "f2159670-7671-49f9-9558-4c082d670406",
+      "credentials": {
+        "githubOAuth2Api": {
+          "id": "Lg6Z8IaehkLJ55hk",
+          "name": "GitHub account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "functionCode": "// 1) Get owner/repo/ref from Webhook (if present), else fall back\nlet owner = \"unknown-owner\";\nlet repo  = \"unknown-repo\";\nlet ref   = \"main\";\n\nif ($node[\"Webhook\"] && $node[\"Webhook\"].json) {\n  const webhookRoot = $node[\"Webhook\"].json;\n  const payload = webhookRoot.body || webhookRoot;\n\n  owner = payload.owner || owner;\n  repo  = payload.repo  || repo;\n  ref   = payload.ref   || ref;\n}\n\n// 2) Get all file meta (paths) from \"Filter Files (Full)\"\n//    This node should output items like: { json: { path: \"src/App.js\", ... } }\nconst filterItems = $items(\"Filter Files (Full)\", 0) || [];\nconst paths = filterItems.map(i =>\n  (i && i.json && (i.json.path || i.json.filename)) || null\n);\n\nconst MAX = 8000; // per-file truncation limit\n\n// 3) Build one Gemini body PER FILE (per item from Get File Content (Full))\nconst results = items.map((item, index) => {\n  const current = item.json;\n\n  // file content from Get File Content (Full)\n  const contentRaw = current.data ?? current.body ?? current;\n\n  let fileContent =\n    typeof contentRaw === \"string\"\n      ? contentRaw\n      : JSON.stringify(contentRaw, null, 2);\n\n  // Optional: truncate very large files\n  if (fileContent.length > MAX) {\n    fileContent =\n      fileContent.slice(0, MAX / 2) +\n      \"\\n\\n// ... file truncated ...\\n\\n\" +\n      fileContent.slice(-MAX / 2);\n  }\n\n  // filename from Filter Files (Full) by index, or fallback\n  const filename = paths[index] || `file-${index + 1}`;\n  const language = (filename.split(\".\").pop() || \"text\");\n\n  const prompt =\n    `You are a senior software engineer and code reviewer.\\n` +\n    `Analyze the following code file for structure, maintainability, correctness, security, performance, and documentation.\\n` +\n    `Return ONLY a JSON object with this schema (no extra text):\\n` +\n    `{\"path\": string,` +\n    ` \"issues\": [{\"line\": number|null, \"severity\": \"critical\"|\"major\"|\"minor\", \"type\": string, \"message\": string}],` +\n    ` \"suggestions\": [{\"title\": string, \"explanation\": string, \"diff_example\": string|null}],` +\n    ` \"metrics\": {\"complexity\": number, \"readability\": number, \"testCoverageEstimate\": number, \"documentationScore\": number},` +\n    ` \"overallFileScore\": number }\\n\\n` +\n    `Project: ${owner}/${repo}@${ref}\\n` +\n    `File: ${filename}\\n` +\n    `Language: ${language}\\n\\n` +\n    `Code:\\n` +\n    fileContent;\n\n  const geminiBody = {\n    contents: [\n      {\n        role: \"user\",\n        parts: [{ text: prompt }],\n      },\n    ],\n    generationConfig: {\n      response_mime_type: \"application/json\",\n    },\n  };\n\n  return {\n    json: {\n      owner,\n      repo,\n      ref,\n      action: \"full\",\n      filename,\n      path: filename,\n      geminiBody,\n    },\n  };\n});\n\nreturn results;\n"
+      },
+      "name": "Prepare Gemini Body (Full)",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [
+        1264,
+        416
+      ],
+      "id": "2dc16fc1-515d-4dc4-be13-cf156e59b33d"
+    },
+    {
+      "parameters": {
+        "functionCode": "// Build File Review (Full) - run once for all items\n\n// items = output of \"Call Gemini (Full)\"\n// We also align each result with \"Prepare Gemini Body (Full)\" by index.\n\nfunction unwrapOnce(text) {\n  if (typeof text !== \"string\") return text;\n\n  // If it doesn't look like JSON or a JSON-encoded string, skip\n  if (!text.startsWith(\"{\") && !text.startsWith(\"[\") && !text.startsWith(\"\\\"\")) {\n    return text;\n  }\n\n  try {\n    const parsed = JSON.parse(text);\n\n    // Case 1: it was just a JSON-encoded string\n    if (typeof parsed === \"string\") {\n      return parsed;\n    }\n\n    // Case 2: object with a `text` field\n    if (parsed && typeof parsed.text === \"string\") {\n      return parsed.text;\n    }\n\n    // Otherwise, keep original\n    return text;\n  } catch (e) {\n    return text;\n  }\n}\n\nconst results = items.map((item, index) => {\n  // ---------- 1. META FROM PREPARE GEMINI BODY (FULL) ----------\n  let metaFile = {};\n  try {\n    const metaItem = $items(\"Prepare Gemini Body (Full)\", 0, index);\n    metaFile = (metaItem && metaItem.json) ? metaItem.json : {};\n  } catch (e) {\n    metaFile = {};\n  }\n\n  // ---------- 2. RAW MODEL RESPONSE FOR THIS ITEM ----------\n  const resp = item.json;\n  let rawText = \"\";\n\n  try {\n    // Case A: Gemini HTTP API style\n    let candidate =\n      resp.candidates && Array.isArray(resp.candidates) && resp.candidates[0];\n\n    let part =\n      candidate &&\n      candidate.content &&\n      Array.isArray(candidate.content.parts) &&\n      candidate.content.parts[0];\n\n    if (part && typeof part.text === \"string\") {\n      rawText = part.text;\n    } else if (typeof resp.text === \"string\") {\n      // Case B: n8n / LangChain style: { text: \"...\" }\n      rawText = resp.text;\n    } else {\n      // Fallback: just stringify whatever we got\n      rawText = JSON.stringify(resp);\n    }\n  } catch (e) {\n    rawText = JSON.stringify(resp);\n  }\n\n  // ---------- 3. NORMALIZE TO CLEAN JSON STRING ----------\n  if (typeof rawText !== \"string\") {\n    rawText = String(rawText ?? \"\");\n  }\n  rawText = rawText.trim();\n\n  // Unwrap JSON-inside-JSON at most twice\n  rawText = unwrapOnce(rawText);\n  rawText = unwrapOnce(rawText);\n\n  // Some models prepend \"text:\" before the fenced JSON\n  if (typeof rawText === \"string\" && rawText.toLowerCase().startsWith(\"text:\")) {\n    rawText = rawText.slice(5).trim();\n  }\n\n  // Strip code fences and language hints\n  rawText = rawText\n    .replace(/```json/gi, \"\")\n    .replace(/```diff/gi, \"\")\n    .replace(/```/g, \"\")\n    .trim();\n\n  // ---------- 4. PARSE JSON (WITH BRACE FALLBACK) ----------\n  let fileReview;\n  let parseError = null;\n\n  try {\n    fileReview = JSON.parse(rawText);\n  } catch (e1) {\n    const firstBrace = rawText.indexOf(\"{\");\n    const lastBrace = rawText.lastIndexOf(\"}\");\n\n    if (firstBrace !== -1 && lastBrace !== -1 && lastBrace > firstBrace) {\n      const chunk = rawText.slice(firstBrace, lastBrace + 1);\n      try {\n        fileReview = JSON.parse(chunk);\n      } catch (e2) {\n        parseError = e2.message;\n        fileReview = {\n          rawText,\n          jsonChunk: chunk,\n          parseError,\n        };\n      }\n    } else {\n      parseError = e1.message;\n      fileReview = {\n        rawText,\n        jsonChunk: null,\n        parseError,\n      };\n    }\n  }\n\n  // ---------- 5. DERIVED FIELDS ----------\n  const issues = Array.isArray(fileReview.issues) ? fileReview.issues : [];\n  const overallFileScore =\n    typeof fileReview.overallFileScore === \"number\"\n      ? fileReview.overallFileScore\n      : 0;\n\n  const path =\n    metaFile.path ||\n    fileReview.path ||\n    metaFile.filename ||\n    `file-${index + 1}`;\n\n  // ---------- 6. RETURN ONE ITEM PER FILE ----------\n  return {\n    json: {\n      path,\n      issues,\n      overallFileScore,\n      fileReview, // full parsed Gemini JSON for this file\n    },\n  };\n});\n\nreturn results;\n"
+      },
+      "name": "Build File Review (Full)",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [
+        1904,
+        416
+      ],
+      "id": "455f520f-f108-4f15-aef9-d5b2d7c9bd41"
+    },
+    {
+      "parameters": {
+        "functionCode": "if ($node[\"Webhook\"] && $node[\"Webhook\"].json) {\n  const webhookRoot = $node[\"Webhook\"].json;\n  const payload = webhookRoot.body || webhookRoot;\n\n  owner = payload.owner || owner;\n  repo  = payload.repo  || repo;\n  ref   = payload.ref   || ref;\n}\n\n// const meta = $items(\"Webhook\", 0, 0).json || {};\n// const owner = meta.owner || 'unknown-owner';\n// const repo = meta.repo || 'unknown-repo';\n// const ref = meta.ref || 'main';\n\nconst severityWeight = { critical: 3, major: 2, minor: 1 };\n\nconst fileResults = items.map(item => item.json);\n\nconst scores = fileResults.map(fr => fr.overallFileScore || 0);\nconst overallProjectScore = scores.length\n  ? Math.round(scores.reduce((a, b) => a + b, 0) / scores.length)\n  : 0;\n\nlet allIssues = [];\nfor (const fr of fileResults) {\n  const issues = fr.issues || [];\n  for (const issue of issues) {\n    allIssues.push({ ...issue, path: fr.path });\n  }\n}\n\nallIssues.sort((a, b) => (severityWeight[b.severity] || 0) - (severityWeight[a.severity] || 0));\n\nconst topIssues = allIssues.slice(0, 20);\nconst files = fileResults.map(fr => fr.fileReview || { path: fr.path });\n\nreturn [\n  {\n    json: {\n      project: `${owner}/${repo}@${ref}`,\n      mode: 'full',\n      overallProjectScore,\n      topIssues,\n      files\n    }\n  }\n];"
+      },
+      "name": "Aggregate Project Review (Full)",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [
+        2128,
+        416
+      ],
+      "id": "fad03912-dbde-4620-982c-c48f62572d63"
+    },
+    {
+      "parameters": {
+        "values": {
+          "string": [
+            {
+              "name": "error",
+              "value": "Unsupported action. Use action:\"file\" or action:\"full\" with owner/repo/ref/filename (for file)."
+            }
+          ]
+        },
+        "options": {}
+      },
+      "name": "Unsupported Action",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 2,
+      "position": [
+        576,
+        592
+      ],
+      "id": "e88e450c-303a-41a7-9899-233a47e30798"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json.geminiBody.contents[0].parts[0].text }}",
+        "batching": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.7,
+      "position": [
+        1008,
+        128
+      ],
+      "id": "2f1b6791-31db-4a5a-b7a7-998d44436b02",
+      "name": "Basic LLM Chain"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        1072,
+        272
+      ],
+      "id": "1ce3ca98-60b0-486c-8e4d-f52fcf275dc4",
+      "name": "Google Gemini Chat Model",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "9QiuVwJEfnGw3LZ8",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        1600,
+        608
+      ],
+      "id": "b99c12e9-9d29-4ea8-9abb-0a1c623f4422",
+      "name": "Google Gemini Chat Model1",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "9QiuVwJEfnGw3LZ8",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json.geminiBody.contents[0].parts[0].text }}",
+        "batching": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.7,
+      "position": [
+        1504,
+        416
+      ],
+      "id": "864b6eb3-ff49-4906-88a8-920fc28c2ede",
+      "name": "Basic LLM Chain1"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "If Action is File",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If Action is File": {
+      "main": [
+        [
+          {
+            "node": "Get File Content",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "If Action is Full",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get File Content": {
+      "main": [
+        [
+          {
+            "node": "Prepare Gemini Body",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Gemini Body": {
+      "main": [
+        [
+          {
+            "node": "Basic LLM Chain",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Call Gemini": {
+      "main": [
+        []
+      ]
+    },
+    "If Action is Full": {
+      "main": [
+        [
+          {
+            "node": "Get Repo Tree (Full)",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Unsupported Action",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Repo Tree (Full)": {
+      "main": [
+        [
+          {
+            "node": "Filter Files (Full)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Filter Files (Full)": {
+      "main": [
+        [
+          {
+            "node": "Get File Content (Full)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get File Content (Full)": {
+      "main": [
+        [
+          {
+            "node": "Prepare Gemini Body (Full)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Gemini Body (Full)": {
+      "main": [
+        [
+          {
+            "node": "Basic LLM Chain1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build File Review (Full)": {
+      "main": [
+        [
+          {
+            "node": "Aggregate Project Review (Full)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Basic LLM Chain",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Basic LLM Chain": {
+      "main": [
+        [
+          {
+            "node": "Build Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model1": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Basic LLM Chain1",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Basic LLM Chain1": {
+      "main": [
+        [
+          {
+            "node": "Build File Review (Full)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "6c2b6241-c3a7-40a9-9f0b-cc87cdcfe029",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "6a1b388eeb5426968177ff914fba9d02739b876861884eeeeecd98bfb574b9a7"
+  },
+  "id": "wlpY6nVNnPOPEh6D",
+  "tags": []
+}

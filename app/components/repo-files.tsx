@@ -79,64 +79,88 @@ export const FileExplorer = ({
 
   const webhookUrl = process.env.NEXT_PUBLIC_REVIEW_WEBHOOK;
 
-  const handleReviewFile = async (path: string): Promise<void> => {
-    const filename = path.startsWith("/") ? path : `/${path}`;
-    const payload = {
-      action: "file",
-      owner: owner,
-      repo: repoName,
-      ref: "main",
-      filename,
+const sendReviewRequest = async (payload: Record<string, any>) => {
+  if (!webhookUrl) throw new Error("Missing env: NEXT_PUBLIC_REVIEW_WEBHOOK");
+
+  setIsReviewLoading(true);
+
+  try {
+    const res = await fetch(webhookUrl, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+
+    if (!res.ok) throw new Error(`API error: ${res.status} ${res.statusText}`);
+
+    const data = await res.json().catch(() => null);
+
+    // Normalize API response once here instead of duplicating logic
+    return {
+      project: data.project,
+      overallFileScore: data.file?.overallFileScore ?? data.overallProjectScore ?? 0,
+      metrics: {
+        testCoverageEstimate: data.file?.metrics?.testCoverageEstimate ?? 0,
+        documentationScore: data.file?.metrics?.documentationScore ?? 0,
+        readability: data.file?.metrics?.readability ?? 0,
+      },
+      topIssues: data.topIssues ?? [],
     };
+  } finally {
+    // Ensure loading always stops
+    setIsReviewLoading(false);
+  }
+};
 
-    try {
-      if (!webhookUrl) {
-        throw new Error("Missing env: NEXT_PUBLIC_REVIEW_WEBHOOK");
-      }
-      setIsReviewLoading(true);
-      const res = await fetch(webhookUrl,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify(payload),
-        }
-      );
+const handleReviewFile = async (path: string) => {
+  const filename = path.startsWith("/") ? path : `/${path}`;
 
-      if (!res.ok) {
-        console.error("Review API failed", res.status, res.statusText);
-        return;
-      }
-
-      const data = await res.json().catch(() => null);
-      const mappedResponse = {
-        project: data.project,
-        overallFileScore: data.file?.overallFileScore ?? data.overallProjectScore ?? 0,
-        metrics: {
-          testCoverageEstimate: data.file?.metrics?.testCoverageEstimate ?? 0,
-          documentationScore: data.file?.metrics?.documentationScore ?? 0,
-          readability: data.file?.metrics?.readability ?? 0,
-        },
-        topIssues: data.topIssues ?? [],
-      };
-
-      setReviewData(mappedResponse);
-      setIsReviewLoading(false);
-      setIsReviewOpen(true);
-      setShowFile(false);
-      console.log("Review API response:", data);
-    } catch (err) {
-      console.error("Error calling review API", err);
-      toast("Event has been created.")
-      setIsReviewOpen(false);
-      setShowFile(true);
-      setReviewData(null);
-    }
-    finally {
-      setIsReviewLoading(false);
-    }
+  const payload = {
+    action: "file",
+    owner,
+    repo: repoName,
+    ref: "main",
+    filename,
   };
+
+  try {
+    const mappedResponse = await sendReviewRequest(payload);
+
+    setReviewData(mappedResponse);
+    setIsReviewOpen(true);
+    setShowFile(false);
+  } catch (err) {
+    console.error("Error reviewing file:", err);
+    toast("Review failed.");
+    setReviewData(null);
+    setIsReviewOpen(false);
+    setShowFile(true);
+  }
+};
+
+const handleFullReview = async () => {
+  const payload = {
+    action: "full",
+    owner,
+    repo: repoName,
+    ref: "main",
+  };
+
+  try {
+    const mappedResponse = await sendReviewRequest(payload);
+
+    setReviewData(mappedResponse);
+    setIsReviewOpen(true);
+    setShowFile(false);
+  } catch (err) {
+    console.error("Error reviewing repository:", err);
+    toast("Review failed.");
+    setReviewData(null);
+    setIsReviewOpen(false);
+    setShowFile(true);
+  }
+};
+
 
   const handleCloseReview = () => {
     setIsReviewOpen(false);
@@ -159,7 +183,7 @@ export const FileExplorer = ({
             </div>
             <Button
               className="bg-primary hover:bg-primary/90 text-primary-foreground glow-effect"
-              onClick={() => toast("Test toast from /test")}
+              onClick={() => handleFullReview()}
             >
               Review Full Project
             </Button>
