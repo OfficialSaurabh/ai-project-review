@@ -78,6 +78,37 @@ export const FileExplorer = ({
   };
 
   const webhookUrl = process.env.NEXT_PUBLIC_REVIEW_WEBHOOK;
+const normalizeReviewResponse = (data: any) => {
+  return {
+    project: data.project,
+    overallFileScore:
+      data.file?.overallFileScore ??
+      data.overallProjectScore ??
+      0,
+    metrics: {
+      testCoverageEstimate: data.file?.metrics?.testCoverageEstimate ?? 0,
+      documentationScore: data.file?.metrics?.documentationScore ?? 0,
+      readability: data.file?.metrics?.readability ?? 0,
+    },
+    topIssues: data.topIssues ?? [],
+  };
+};
+const normalizeLastReviewResponse = (data: any, owner: string, repo: string) => {
+  if (!data?.exists) {
+    throw new Error("No stored review exists");
+  }
+
+  return {
+    project: `${owner}/${repo}@main`,
+    overallFileScore: data.fileScore ?? 0,
+    metrics: {
+      testCoverageEstimate: data.metrics?.testCoverageEstimate ?? 0,
+      documentationScore: data.metrics?.documentationScore ?? 0,
+      readability: data.metrics?.readability ?? 0,
+    },
+    topIssues: data.issues ?? [],
+  };
+};
 
 const sendReviewRequest = async (payload: Record<string, any>) => {
   if (!webhookUrl) throw new Error("Missing env: NEXT_PUBLIC_REVIEW_WEBHOOK");
@@ -94,18 +125,7 @@ const sendReviewRequest = async (payload: Record<string, any>) => {
     if (!res.ok) throw new Error(`API error: ${res.status} ${res.statusText}`);
 
     const data = await res.json().catch(() => null);
-
-    // Normalize API response once here instead of duplicating logic
-    return {
-      project: data.project,
-      overallFileScore: data.file?.overallFileScore ?? data.overallProjectScore ?? 0,
-      metrics: {
-        testCoverageEstimate: data.file?.metrics?.testCoverageEstimate ?? 0,
-        documentationScore: data.file?.metrics?.documentationScore ?? 0,
-        readability: data.file?.metrics?.readability ?? 0,
-      },
-      topIssues: data.topIssues ?? [],
-    };
+    return normalizeReviewResponse(data);
   } finally {
     // Ensure loading always stops
     setIsReviewLoading(false);
@@ -135,6 +155,54 @@ const handleReviewFile = async (path: string) => {
     setReviewData(null);
     setIsReviewOpen(false);
     setShowFile(true);
+  }
+};
+
+const fetchLastReview = async () => {
+  setIsReviewLoading(true);
+
+  try {
+    const project = `${owner}/${repoName}@main`;
+
+    const params = new URLSearchParams({
+      project,
+      // filename is OPTIONAL — backend supports it
+      filename: "/src/component/BookCreate.js"
+    });
+
+    const res = await fetch(
+      // http://127.0.0.1:8000/reviews/last?project=OfficialSaurabh/Book-Reading-List@main&filename=/src/component/BookCreate.js
+      `http://127.0.0.1:8000/reviews/last?${params.toString()}`,
+      {
+        method: "GET",
+        headers: { Accept: "application/json" },
+      }
+    );
+
+    if (!res.ok) {
+      throw new Error(`API error: ${res.status}`);
+    }
+
+    const data = await res.json();
+    const mappedResponse = normalizeLastReviewResponse(
+  data,
+  owner,
+  repoName
+);
+
+    console.log("Fetched last review data:", mappedResponse);
+
+    setReviewData(mappedResponse);
+    setIsReviewOpen(true);
+    setShowFile(false);
+  } catch (err) {
+    console.error("Failed to load last review:", err);
+    toast("No previous review found.");
+    setReviewData(null);
+    setIsReviewOpen(false);
+    setShowFile(true);
+  } finally {
+    setIsReviewLoading(false);
   }
 };
 
@@ -181,6 +249,13 @@ const handleFullReview = async () => {
                 {displayFiles.length} files found
               </p>
             </div>
+            <Button
+      variant="outline"
+      onClick={fetchLastReview}
+      className="border-primary/50 hover:bg-primary hover:text-primary-foreground"
+    >
+      View Last Review
+    </Button>
             <Button
               className="bg-primary hover:bg-primary/90 text-primary-foreground glow-effect"
               onClick={() => handleFullReview()}
