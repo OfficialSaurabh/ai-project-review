@@ -5,6 +5,8 @@ import { useEffect, useState } from "react";
 import NavBar from "./components/nav-bar";
 import RepoList from "./components/repo-list";
 import Hero from "./components/hero";
+import LocalFileReview from "./components/localFileReview";
+import { Button } from "@headlessui/react";
 
 interface Repo {
   id: number;
@@ -19,36 +21,36 @@ interface Repo {
     login: string;
   };
 }
-
 export default function Home() {
   const { data: session } = useSession();
   const [repos, setRepos] = useState<Repo[]>([]);
   const [reposLoading, setReposLoading] = useState(false);
+  const [reviewLocalFile, setReviewLocalFile] = useState(false);
 
-useEffect(() => {
-  if (!session?.accessToken) return;
+  useEffect(() => {
+    if (!session?.accessToken) return;
 
-  setReposLoading(true);
+    setReposLoading(true);
 
-  const fetchRepos = async () => {
-    try {
-      const res = await fetch("https://api.github.com/user/repos?sort=updated&direction=desc", {
-        headers: {
-          Authorization: `Bearer ${session.accessToken}`,
-        },
-      });
+    const fetchRepos = async () => {
+      try {
+        const res = await fetch("https://api.github.com/user/repos?sort=updated&direction=desc", {
+          headers: {
+            Authorization: `Bearer ${session.accessToken}`,
+          },
+        });
 
-      const data = await res.json();
-      setRepos(data);
-    } catch (err) {
-      console.error("Failed to fetch repos", err);
-    } finally {
-      setReposLoading(false);
-    }
-  };
+        const data = await res.json();
+        setRepos(data);
+      } catch (err) {
+        console.error("Failed to fetch repos", err);
+      } finally {
+        setReposLoading(false);
+      }
+    };
 
-  fetchRepos();
-}, [session]);
+    fetchRepos();
+  }, [session]);
 
 
   return (
@@ -64,11 +66,24 @@ useEffect(() => {
               Analyze code quality, structure, and documentation with detailed insights and actionable suggestions
             </p>
           </div>
+          <div className=" flex justify-end ">
+            <button
+              type="button"
+              onClick={() => setReviewLocalFile(true)}
+              className="text-sm border rounded px-3 py-1 hover:border-accent  transition-colors flex items-center gap-2"
+            >
+              {/* <FiGithub className="h-4 w-4" /> */}
+              Review Local File
+            </button>
+          </div>
+          {reviewLocalFile &&
+            <LocalFileReview setReviewLocalFile={setReviewLocalFile} />
+          }
 
           {session ? (
             <RepoList repos={repos} reposLoading={reposLoading} />
           ) : (
-            <Hero/>
+            <Hero />
           )}
         </div>
       </div>
