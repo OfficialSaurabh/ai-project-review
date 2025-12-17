@@ -91,7 +91,7 @@ export default function LocalFileReview({ setReviewLocalFile }: LocalFileReviewP
     setResult(null);
 
     try {
-      const res = await fetch("http://localhost:8000/review", {
+      const res = await fetch("http://127.0.0.1:8000/review", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
