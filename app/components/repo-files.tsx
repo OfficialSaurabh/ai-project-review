@@ -3,10 +3,11 @@ import { CiFolderOn, CiFileOn } from "react-icons/ci";
 import { GoChevronRight } from "react-icons/go";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { AnalysisDashboard } from "./analysis-dashboard";
 import Loader from "./loader";
 import { toast } from "@/components/ui/sonner";
+import { create } from "domain";
 
 interface FileItem {
   path: string;
@@ -36,6 +37,9 @@ export const FileExplorer = ({
   const [showFile, setShowFile] = useState(true);
   const [isReviewOpen, setIsReviewOpen] = useState(false);
   const [lastReviewedFile, setLastReviewedFile] = useState<string | null>(null);
+ const [fileList, setFileList] = useState<string[]>([]);
+ console.log("files in FileExplorer:", fileList);
+
 
   const getFileIcon = (file: FileItem) => {
     if (file.type === "tree") {
@@ -102,6 +106,7 @@ export const FileExplorer = ({
 
     return {
       project: `${owner}/${repo}@main`,
+      createdAt: data.createdAt,
       overallFileScore: data.fileScore ?? 0,
       metrics: {
         testCoverageEstimate: data.metrics?.testCoverageEstimate ?? 0,
@@ -133,6 +138,9 @@ export const FileExplorer = ({
       setIsReviewLoading(false);
     }
   };
+  const normalizedFileList = fileList.map(p =>
+  p.startsWith("/") ? p.slice(1) : p
+);
 
   const handleReviewFile = async (path: string) => {
     const filename = path.startsWith("/") ? path : `/${path}`;
@@ -149,7 +157,7 @@ export const FileExplorer = ({
       const mappedResponse = await sendReviewRequest(payload);
 
       setReviewData(mappedResponse);
-       setLastReviewedFile(filename)
+      setLastReviewedFile(filename)
       setIsReviewOpen(true);
       setShowFile(false);
     } catch (err) {
@@ -161,9 +169,8 @@ export const FileExplorer = ({
     }
   };
 
-  const fetchLastReview = async () => {
-    // const filename = path ? (path.startsWith("/") ? path : `/${path}`) : "";
-    console.log("Fetching last review for file:", lastReviewedFile);
+  const fetchLastReview = async (path: string) => {
+    console.log("Fetching last review for file:", path);
     setIsReviewLoading(true);
 
     try {
@@ -171,7 +178,7 @@ export const FileExplorer = ({
       const params = new URLSearchParams({
         project,
         // filename is OPTIONAL — backend supports it
-        filename: "/src/component/BookCreate.js"
+        filename: "/" + path,
       });
 
       const res = await fetch(
@@ -210,6 +217,38 @@ export const FileExplorer = ({
     }
   };
 
+  const fetchFiles = async () => {
+  try {
+    const project = `${owner}/${repoName}@main`;
+
+    const res = await fetch(
+      `http://127.0.0.1:8000/reviews/files?project=${encodeURIComponent(project)}`,
+      {
+        method: "GET",
+        headers: {
+          Accept: "application/json",
+        },
+      }
+    );
+
+    if (!res.ok) {
+      throw new Error(`API error: ${res.status}`);
+    }
+
+    const data = await res.json();
+
+    // Defensive check (backend can evolve)
+    if (!Array.isArray(data.files)) {
+      throw new Error("Invalid response shape: files is not an array");
+    }
+
+    setFileList(data.files);
+  } catch (err) {
+    console.error("Failed to fetch reviewed files:", err);
+    setFileList([]); // fail safe
+  }
+};
+
   const handleFullReview = async () => {
     const payload = {
       action: "full",
@@ -238,6 +277,11 @@ export const FileExplorer = ({
     setIsReviewOpen(false);
     setShowFile(true);
   };
+
+  useEffect(() => {
+  fetchFiles();
+}, [owner, repoName]);
+
   return (
     <div className="space-y-6 animate-in fade-in duration-500">
       {isReviewLoading && (
@@ -254,19 +298,19 @@ export const FileExplorer = ({
               </p>
             </div>
             <div className=" gap-4 flex">
-            <Button
+              {/* <Button
               variant="outline"
               onClick={fetchLastReview}
               className="border-primary/50 hover:bg-primary hover:text-primary-foreground"
             >
               View Last Review
-            </Button>
-            <Button
-              className="bg-primary hover:bg-primary/90 text-primary-foreground glow-effect"
-              onClick={() => handleFullReview()}
-            >
-              Review Full Project
-            </Button>
+            </Button> */}
+              <Button
+                className="bg-primary hover:bg-primary/90 text-primary-foreground glow-effect"
+                onClick={() => handleFullReview()}
+              >
+                Review Full Project
+              </Button>
             </div>
           </div>
 
@@ -295,17 +339,30 @@ export const FileExplorer = ({
                     Load Content
                   </Button> */}
                     {!isImageFile(file.path) && (
-                      <Button
-                        variant="outline"
-                        onClick={() => handleReviewFile(file.path)}
-                        size="sm"
-                        className="border-primary/50 hover:bg-primary hover:text-primary-foreground shrink-0"
-                      >
-                        <span className="flex items-center gap-1">
-                          Review File
-                          <GoChevronRight className="w-3 h-3" />
-                        </span>
-                      </Button>
+                      <div className="gap-4 flex">
+                        {/* Check if the fileList = file.path then only show the View LAst Review BUtton */}
+                        {normalizedFileList.includes(file.path) && (
+
+                        <Button
+                          variant="outline"
+                          onClick={() => fetchLastReview(file.path)}
+                          className="border-primary/50 hover:bg-primary hover:text-primary-foreground"
+                        >
+                          View Last Review
+                        </Button>
+                        )}
+                        <Button
+                          variant="outline"
+                          onClick={() => handleReviewFile(file.path)}
+                          size="sm"
+                          className="border-primary/50 hover:bg-primary hover:text-primary-foreground shrink-0"
+                        >
+                          <span className="flex items-center gap-1">
+                            Review File
+                            <GoChevronRight className="w-3 h-3" />
+                          </span>
+                        </Button>
+                      </div>
                     )}
 
                   </div>

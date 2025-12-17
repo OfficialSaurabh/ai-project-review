@@ -22,6 +22,7 @@ interface TopIssue {
 interface AnalysisDashboardProps {
   response: {
     project: string;
+    createdAt: string;
     overallFileScore: number;
     metrics: AnalysisMetrics;
     topIssues?: TopIssue[]; // <-- you ARE using this
@@ -71,6 +72,18 @@ export const AnalysisDashboard = ({
 }: AnalysisDashboardProps) => {
   const [isAnalyzing, setIsAnalyzing] = useState(false);
 
+  console.log("AnalysisDashboard response:", response.createdAt);
+  const formatDate = (date: string | Date) => {
+    const d = new Date(date);
+
+    const day = String(d.getDate()).padStart(2, "0");
+    const month = String(d.getMonth() + 1).padStart(2, "0");
+    const year = d.getFullYear();
+
+    return `${day}-${month}-${year}`;
+  };
+
+
   // Flatten topIssues -> generic insight objects (max 4)
   const issueInsights = (response.topIssues ?? [])
     .slice(0, 4)
@@ -109,7 +122,11 @@ export const AnalysisDashboard = ({
             <h2 className="text-2xl font-bold font-mono mb-1">
               {response.project}
             </h2>
-            <p className="text-muted-foreground">Project Analysis</p>
+            <p className="text-muted-foreground">
+              {response?.createdAt
+                ? `Last Review: ${formatDate(response.createdAt)}`
+                : "Project Analysis Report"}
+            </p>
           </div>
           <Button
             variant="ghost"
@@ -174,9 +191,9 @@ export const AnalysisDashboard = ({
             ))
           ) : (
             <div className="glass-card p-6 rounded-xl hover:border-border transition-all">
-            <p className="text-sm text-muted-foreground">
-              No structure issues found.
-            </p>
+              <p className="text-sm text-muted-foreground">
+                No structure issues found.
+              </p>
             </div>
           )}
         </TabsContent>
@@ -188,9 +205,9 @@ export const AnalysisDashboard = ({
             ))
           ) : (
             <div className="glass-card p-6 rounded-xl hover:border-border transition-all">
-            <p className="text-sm text-muted-foreground">
-              No quality issues found.
-            </p>
+              <p className="text-sm text-muted-foreground">
+                No quality issues found.
+              </p>
             </div>
           )}
         </TabsContent>
@@ -202,9 +219,9 @@ export const AnalysisDashboard = ({
             ))
           ) : (
             <div className="glass-card p-6 rounded-xl hover:border-border transition-all">
-            <p className="text-sm text-muted-foreground">
-              No documentation issues found.
-            </p>
+              <p className="text-sm text-muted-foreground">
+                No documentation issues found.
+              </p>
             </div>
           )}
         </TabsContent>
