@@ -66,7 +66,12 @@ export default function Home() {
               Analyze code quality, structure, and documentation with detailed insights and actionable suggestions
             </p>
           </div>
-          <div className=" flex justify-end ">
+          
+
+
+          {session ? (
+            <>
+                <div className=" flex justify-end ">
             <button
               type="button"
               onClick={() => setReviewLocalFile(true)}
@@ -76,12 +81,16 @@ export default function Home() {
               Review Local File
             </button>
           </div>
-          {reviewLocalFile &&
-            <LocalFileReview setReviewLocalFile={setReviewLocalFile} />
-          }
+              {reviewLocalFile && (
+                
+                <LocalFileReview setReviewLocalFile={setReviewLocalFile} />
+              )}
 
-          {session ? (
-            <RepoList repos={repos} reposLoading={reposLoading} />
+              <RepoList
+                repos={repos}
+                reposLoading={reposLoading}
+              />
+            </>
           ) : (
             <Hero />
           )}
