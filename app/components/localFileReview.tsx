@@ -334,21 +334,23 @@ export default function LocalFileReview({ setReviewLocalFile }: LocalFileReviewP
               );
             })}
           </ul>
+          <div className="flex gap-4 justify-end ">
+            <button
+              onClick={reset}
+              className="border-primary/50 hover:bg-primary hover:text-primary-foreground shrink-0 glass-card p-2 rounded-lg transition-all group"
+            >
+              Reset
+            </button>
+            <button
+              onClick={handleReview}
+              disabled={loading}
+              className="border-primary/50 hover:bg-primary hover:text-primary-foreground shrink-0 glass-card p-2 rounded-lg transition-all group"
 
-          <button
-            onClick={handleReview}
-            disabled={loading}
-            className="w-full bg-black text-white py-2 rounded disabled:opacity-50"
-          >
-            {loading ? "Reviewing…" : "Review Files"}
-          </button>
+            >
+              {loading ? "Reviewing…" : "Review File"}
+            </button>
 
-          <button
-            onClick={reset}
-            className="w-full text-sm text-gray-500"
-          >
-            Reset
-          </button>
+          </div>
         </div>
       )}
 
@@ -376,7 +378,7 @@ export default function LocalFileReview({ setReviewLocalFile }: LocalFileReviewP
                 setShowFile(true);
               }}
             />
-          )}    
+          )}
           {/* <button
             onClick={reset}
             className="bg-black text-white px-4 py-2 rounded"
