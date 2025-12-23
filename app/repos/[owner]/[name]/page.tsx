@@ -7,6 +7,8 @@ import { useRouter, useParams } from "next/navigation";
 import NavBar from "@/app/components/nav-bar";
 import RepoFiles from "@/app/components/repo-files";
 import Loader from "@/app/components/loader";
+import { toast } from "sonner"
+
 
 interface FileItem {
   path: string;
@@ -19,9 +21,6 @@ export default function RepoFilesPage() {
   const params = useParams() as { owner?: string; name?: string };
   const owner = params.owner;
   const name = params.name;
-
-  console.log("useParams in RepoFilesPage:", params);
-
   const { data: session } = useSession();
   const [files, setFiles] = useState<FileItem[]>([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -30,6 +29,7 @@ export default function RepoFilesPage() {
   useEffect(() => {
     if (!session?.accessToken) return;
     if (!owner || !name) {
+      toast.error("Missing owner or name from URL");
       console.error("Missing owner or name from URL:", { owner, name });
       return;
     }
@@ -48,6 +48,7 @@ export default function RepoFilesPage() {
         );
 
         if (!repoRes.ok) {
+          toast.error("Failed to fetch repo info");
           console.error("Repo info status:", repoRes.status);
           throw new Error("Failed to fetch repo info");
         }

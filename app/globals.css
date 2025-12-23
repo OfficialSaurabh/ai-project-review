@@ -2,6 +2,7 @@
 
 @import "tailwindcss";
 
+
 @layer base {
   /* 1. Make all borders use your theme border color utility */
   * {

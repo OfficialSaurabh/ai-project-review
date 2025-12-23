@@ -6,7 +6,8 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { useEffect, useState } from "react";
 import { AnalysisDashboard } from "./analysis-dashboard";
 import Loader from "./loader";
-import { toast } from "@/components/ui/sonner";
+import { toast } from "sonner"
+
 import { create } from "domain";
 
 interface FileItem {
@@ -162,7 +163,7 @@ export const FileExplorer = ({
       setShowFile(false);
     } catch (err) {
       console.error("Error reviewing file:", err);
-      toast("Review failed.");
+      toast.error("AI review service failed");
       setReviewData(null);
       setIsReviewOpen(false);
       setShowFile(true);
@@ -208,7 +209,7 @@ export const FileExplorer = ({
       setShowFile(false);
     } catch (err) {
       console.error("Failed to load last review:", err);
-      toast("No previous review found.");
+      toast.info("No previous review found.");
       setReviewData(null);
       setIsReviewOpen(false);
       setShowFile(true);
@@ -265,9 +266,9 @@ export const FileExplorer = ({
       setShowFile(false);
     } catch (err) {
       console.error("Error reviewing repository:", err);
-      toast("Review failed.");
+      toast.error("AI review service failed");
       setReviewData(null);
-      setIsReviewOpen(false);
+      setIsReviewOpen(false); 
       setShowFile(true);
     }
   };

@@ -7,6 +7,8 @@ import RepoList from "./components/repo-list";
 import Hero from "./components/hero";
 import LocalFileReview from "./components/localFileReview";
 import { Button } from "@headlessui/react";
+import { toast } from "sonner"
+
 
 interface Repo {
   id: number;
@@ -27,6 +29,11 @@ export default function Home() {
   const [reposLoading, setReposLoading] = useState(false);
   const [reviewLocalFile, setReviewLocalFile] = useState(false);
 
+  const showTaosat = () => {
+    toast.info("Event has been created")
+    console.log("Toast shown");
+  }
+
   useEffect(() => {
     if (!session?.accessToken) return;
 
@@ -43,6 +50,7 @@ export default function Home() {
         const data = await res.json();
         setRepos(data);
       } catch (err) {
+        toast.error("Failed to fetch repos");
         console.error("Failed to fetch repos", err);
       } finally {
         setReposLoading(false);
@@ -53,19 +61,25 @@ export default function Home() {
   }, [session]);
 
 
+
   return (
     <>
       <NavBar />
       <div className="min-h-screen p-6 md:p-8">
         <div className="max-w-7xl mx-auto space-y-8">
           <div className="text-center mb-12 animate-in fade-in slide-in-from-top duration-700">
-            <h1 className="text-5xl md:text-6xl font-bold mb-4 bg-gradient-to-r from-primary via-foreground to-primary bg-clip-text text-transparent">
+            {/* <h1 className="text-5xl md:text-6xl font-bold mb-4 bg-gradient-to-r from-primary via-foreground to-primary bg-clip-text text-transparent">
               AI Project Analyzer
-            </h1>
+            </h1> */}
             <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
               Analyze code quality, structure, and documentation with detailed insights and actionable suggestions
             </p>
           </div>
+
+          {/* Click button to show toast */}
+          <Button onClick={showTaosat} className="mb-4 px-4 py-2 bg-blue-500 text-white rounded">
+            Show Toast
+          </Button>
           
 
 
