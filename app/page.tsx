@@ -28,12 +28,7 @@ export default function Home() {
   const [repos, setRepos] = useState<Repo[]>([]);
   const [reposLoading, setReposLoading] = useState(false);
   const [reviewLocalFile, setReviewLocalFile] = useState(false);
-
-  const showTaosat = () => {
-    toast.info("Event has been created")
-    console.log("Toast shown");
-  }
-
+  
   useEffect(() => {
     if (!session?.accessToken) return;
 
@@ -68,21 +63,13 @@ export default function Home() {
       <div className="min-h-screen p-6 md:p-8">
         <div className="max-w-7xl mx-auto space-y-8">
           <div className="text-center mb-12 animate-in fade-in slide-in-from-top duration-700">
-            {/* <h1 className="text-5xl md:text-6xl font-bold mb-4 bg-gradient-to-r from-primary via-foreground to-primary bg-clip-text text-transparent">
+            <h1 className="text-5xl md:text-6xl font-bold mb-4 bg-gradient-to-r from-primary via-foreground to-primary bg-clip-text text-transparent">
               AI Project Analyzer
-            </h1> */}
+            </h1>
             <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
               Analyze code quality, structure, and documentation with detailed insights and actionable suggestions
             </p>
           </div>
-
-          {/* Click button to show toast */}
-          <Button onClick={showTaosat} className="mb-4 px-4 py-2 bg-blue-500 text-white rounded">
-            Show Toast
-          </Button>
-          
-
-
           {session ? (
             <>
                 <div className=" flex justify-end ">
