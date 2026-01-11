@@ -52,7 +52,7 @@ export default function RepoList({
               </p>
             )}
             <div className="text-xs text-muted-foreground mt-2 flex gap-4 ">
-              <Badge variant="outline">{repo.language}</Badge>
+              <Badge variant="outline" >{repo.language}</Badge>
               <span className="flex items-center gap-x-1 "><IoIosStarOutline /> {repo.stargazers_count}</span>
               <span className="flex items-center gap-x-1 "><GoRepoForked /> {repo.forks_count}</span>
             </div>
