@@ -34,20 +34,20 @@ export default function RepoList({
   if (!repos?.length) return <p>No repositories found.</p>;
 
   return (
-    <div className="grid gap-4 md:grid-cols-2 ">
+    <div className="grid gap-4 md:grid-cols-2 items-stretch ">
       {repos.map((repo) => (
         <Link
           key={repo.id}
           href={`/repos/${encodeURIComponent(repo.owner.login)}/${encodeURIComponent(repo.name)}`}
-          className="block border rounded-lg transition"
+          className="block border rounded-lg transition h-full"
         >
-          <div className="glass-card p-6 rounded-xl hover:border-primary/50 transition-all group" >
+          <div className="glass-card p-6 rounded-xl hover:border-primary/50 transition-all  group h-full flex flex-col" >
 
             <h4 className="text-lg font-semibold font-mono mb-2 truncate group-hover:text-primary transition-colors">
               {repo.name}
             </h4>
             {repo.description && (
-              <p className="text-sm text-muted-foreground mt-1">
+              <p className="text-sm text-muted-foreground mt-1 flex-grow">
                 {repo.description}
               </p>
             )}
