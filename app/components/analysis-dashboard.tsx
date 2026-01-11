@@ -69,6 +69,7 @@ const categorizeIssue = (
 export const AnalysisDashboard = ({
   response,
   onClose,
+  fetchFiles,
 }: AnalysisDashboardProps) => {
   const [isAnalyzing, setIsAnalyzing] = useState(false);
 

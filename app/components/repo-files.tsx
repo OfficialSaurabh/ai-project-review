@@ -282,6 +282,7 @@ export const FileExplorer = ({
 
 
   const handleCloseReview = () => {
+    fetchFiles();
     setIsReviewOpen(false);
     setShowFile(true);
   };
@@ -389,7 +390,7 @@ export const FileExplorer = ({
       )}
 
       {!isReviewLoading && isReviewOpen && reviewData && (
-        <AnalysisDashboard response={reviewData} onClose={handleCloseReview} />
+        <AnalysisDashboard response={reviewData} onClose={handleCloseReview}  />
       )}
     </div>
   );
