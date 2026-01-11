@@ -9,6 +9,7 @@ import Loader from "./loader";
 import { toast } from "sonner"
 
 import { create } from "domain";
+import { log } from "console";
 
 interface FileItem {
   path: string;
@@ -170,26 +171,32 @@ export const FileExplorer = ({
     }
   };
 
-  const fetchLastReview = async (path: string) => {
+  const fetchLastReview = async (path?: string) => {
     console.log("Fetching last review for file:", path);
     setIsReviewLoading(true);
 
     try {
       const project = `${owner}/${repoName}@main`;
+      console.log("project", project)
       const params = new URLSearchParams({
         project,
         // filename is OPTIONAL — backend supports it
         filename: "/" + path,
       });
 
-      const res = await fetch(
-        // http://127.0.0.1:8000/reviews/last?project=OfficialSaurabh/Book-Reading-List@main&filename=/src/component/BookCreate.js
-        `http://127.0.0.1:8000/reviews/last?${params.toString()}`,
-        {
-          method: "GET",
-          headers: { Accept: "application/json" },
-        }
-      );
+      // const res = await fetch(
+      //   // http://127.0.0.1:8000/reviews/last?project=OfficialSaurabh/Book-Reading-List@main&filename=/src/component/BookCreate.js
+      //   `http://127.0.0.1:8000/reviews/last?${params.toString()}`,
+      //   {
+      //     method: "GET",
+      //     headers: { Accept: "application/json" },
+      //   }
+      // );
+      const url = path
+      ? `http://127.0.0.1:8000/reviews/last?${params.toString()}`
+      : `http://127.0.0.1:8000/reviews/full/last?project=${project}`;
+
+      const res = await fetch(url, { headers: { Accept: "application/json" } });
 
       if (!res.ok) {
         throw new Error(`API error: ${res.status}`);
@@ -306,6 +313,13 @@ export const FileExplorer = ({
             >
               View Last Review
             </Button> */}
+             <Button
+                          variant="outline"
+                          onClick={() => fetchLastReview()}
+                          className="border-primary/50 hover:bg-primary hover:text-primary-foreground"
+                        >
+                          Overall Last Review
+                        </Button>
               <Button
                 className="bg-primary hover:bg-primary/90 text-primary-foreground glow-effect"
                 onClick={() => handleFullReview()}
