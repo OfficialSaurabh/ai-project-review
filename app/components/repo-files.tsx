@@ -6,6 +6,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { useEffect, useState } from "react";
 import { AnalysisDashboard } from "./analysis-dashboard";
 import Loader from "./loader";
+import { useSession } from "next-auth/react";
 import { toast } from "sonner"
 
 import { create } from "domain";
@@ -33,6 +34,7 @@ export const FileExplorer = ({
   repoName,
   owner,
 }: FileExplorerProps) => {
+  const { data: session } = useSession();
   const [isReviewLoading, setIsReviewLoading] = useState(false);
   const [selectedFileContent, setSelectedFileContent] = useState("");
   const [reviewData, setReviewData] = useState<AnalysisResponse | null>(null);
@@ -41,6 +43,7 @@ export const FileExplorer = ({
   const [lastReviewedFile, setLastReviewedFile] = useState<string | null>(null);
  const [fileList, setFileList] = useState<string[]>([]);
  console.log("files in FileExplorer:", fileList);
+
 
 
   const getFileIcon = (file: FileItem) => {
@@ -145,9 +148,15 @@ export const FileExplorer = ({
 );
 
   const handleReviewFile = async (path: string) => {
+    if (!session?.provider || !session?.accessToken) {
+    toast.error("Authentication token missing");
+    return;
+  }
     const filename = path.startsWith("/") ? path : `/${path}`;
 
     const payload = {
+      provider: session.provider,          // github | bitbucket
+    accessToken: session.accessToken,  
       action: "file",
       owner,
       repo: repoName,
@@ -171,66 +180,83 @@ export const FileExplorer = ({
     }
   };
 
-  const fetchLastReview = async (path?: string) => {
-    console.log("Fetching last review for file:", path);
-    setIsReviewLoading(true);
+const fetchLastReview = async (path?: string) => {
+  if (!session?.provider) {
+    toast.error("Provider missing from session");
+    return;
+  }
 
-    try {
-      const project = `${owner}/${repoName}@main`;
-      console.log("project", project)
-      const params = new URLSearchParams({
-        project,
-        // filename is OPTIONAL — backend supports it
+  console.log("Fetching last review for file:", path);
+  setIsReviewLoading(true);
+
+  try {
+    const baseUrl = "http://127.0.0.1:8000";
+
+    const commonParams = new URLSearchParams({
+      provider: session.provider, // "github" | "bitbucket"
+      owner,
+      repo: repoName,
+      ref: "main",
+    });
+
+    let url = "";
+
+    if (path) {
+      const fileParams = new URLSearchParams({
+        ...Object.fromEntries(commonParams),
         filename: "/" + path,
       });
 
-      // const res = await fetch(
-      //   // http://127.0.0.1:8000/reviews/last?project=OfficialSaurabh/Book-Reading-List@main&filename=/src/component/BookCreate.js
-      //   `http://127.0.0.1:8000/reviews/last?${params.toString()}`,
-      //   {
-      //     method: "GET",
-      //     headers: { Accept: "application/json" },
-      //   }
-      // );
-      const url = path
-      ? `http://127.0.0.1:8000/reviews/last?${params.toString()}`
-      : `http://127.0.0.1:8000/reviews/full/last?project=${project}`;
-
-      const res = await fetch(url, { headers: { Accept: "application/json" } });
-
-      if (!res.ok) {
-        throw new Error(`API error: ${res.status}`);
-      }
-
-      const data = await res.json();
-      const mappedResponse = normalizeLastReviewResponse(
-        data,
-        owner,
-        repoName
-      );
-
-      console.log("Fetched last review data:", mappedResponse);
-
-      setReviewData(mappedResponse);
-      setIsReviewOpen(true);
-      setShowFile(false);
-    } catch (err) {
-      console.error("Failed to load last review:", err);
-      toast.info("No previous review found.");
-      setReviewData(null);
-      setIsReviewOpen(false);
-      setShowFile(true);
-    } finally {
-      setIsReviewLoading(false);
+      url = `${baseUrl}/reviews/last?${fileParams.toString()}`;
+    } else {
+      url = `${baseUrl}/reviews/full/last?${commonParams.toString()}`;
     }
-  };
 
-  const fetchFiles = async () => {
+    const res = await fetch(url, {
+      headers: { Accept: "application/json" },
+    });
+
+    if (!res.ok) {
+      throw new Error(`API error: ${res.status}`);
+    }
+
+    const data = await res.json();
+
+    const mappedResponse = normalizeLastReviewResponse(data, owner, repoName);
+
+    console.log("Fetched last review data:", mappedResponse);
+
+    setReviewData(mappedResponse);
+    setIsReviewOpen(true);
+    setShowFile(false);
+  } catch (err) {
+    console.error("Failed to load last review:", err);
+    toast.info("No previous review found.");
+    setReviewData(null);
+    setIsReviewOpen(false);
+    setShowFile(true);
+  } finally {
+    setIsReviewLoading(false);
+  }
+};
+
+
+ const fetchFiles = async () => {
+  if (!session?.provider) {
+    toast.error("Provider missing from session");
+    return;
+  }
+
   try {
-    const project = `${owner}/${repoName}@main`;
+    const params = new URLSearchParams({
+      provider: session.provider, // "github" | "bitbucket"
+      owner,
+      repo: repoName,
+      ref: "main",
+    });
 
     const res = await fetch(
-      `http://127.0.0.1:8000/reviews/files?project=${encodeURIComponent(project)}`,
+      `http://127.0.0.1:8000/reviews/files?${params.toString()}`,
       {
         method: "GET",
         headers: {
@@ -245,7 +271,6 @@ export const FileExplorer = ({
 
     const data = await res.json();
 
-    // Defensive check (backend can evolve)
     if (!Array.isArray(data.files)) {
       throw new Error("Invalid response shape: files is not an array");
     }
@@ -257,8 +282,15 @@ export const FileExplorer = ({
   }
 };
 
+
   const handleFullReview = async () => {
+      if (!session?.provider || !session?.accessToken) {
+    toast.error("Authentication token missing");
+    return;
+  }
     const payload = {
+      provider: session.provider,
+    accessToken: session.accessToken,
       action: "full",
       owner,
       repo: repoName,

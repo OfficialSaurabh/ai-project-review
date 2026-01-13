@@ -11,50 +11,78 @@ import { toast } from "sonner"
 
 
 interface Repo {
-  id: number;
+  id: string | number;
   name: string;
   full_name: string;
   description: string;
-  language: string;
-  stargazers_count: number;
-  forks_count: number;
-  default_branch: string;
+  language?: string;
+  stargazers_count?: number;
+  forks_count?: number;
+  default_branch?: string;
   owner: {
     login: string;
   };
 }
+
 export default function Home() {
   const { data: session } = useSession();
   const [repos, setRepos] = useState<Repo[]>([]);
   const [reposLoading, setReposLoading] = useState(false);
   const [reviewLocalFile, setReviewLocalFile] = useState(false);
   
-  useEffect(() => {
-    if (!session?.accessToken) return;
+ useEffect(() => {
+  if (!session?.accessToken || !session?.provider) return;
 
-    setReposLoading(true);
+  setReposLoading(true);
 
-    const fetchRepos = async () => {
-      try {
-        const res = await fetch("https://api.github.com/user/repos?sort=updated&direction=desc", {
-          headers: {
-            Authorization: `Bearer ${session.accessToken}`,
-          },
-        });
+  const fetchRepos = async () => {
+    try {
+      let url = "";
 
-        const data = await res.json();
-        setRepos(data);
-      } catch (err) {
-        toast.error("Failed to fetch repos");
-        console.error("Failed to fetch repos", err);
-      } finally {
-        setReposLoading(false);
+      if (session.provider === "github") {
+        url = "https://api.github.com/user/repos?sort=updated&direction=desc";
+      } else if (session.provider === "bitbucket") {
+        url = "https://api.bitbucket.org/2.0/repositories?role=member&sort=-updated_on";
+      } else {
+        throw new Error("Unsupported provider");
       }
-    };
 
-    fetchRepos();
-  }, [session]);
+      const res = await fetch(url, {
+        headers: {
+          Authorization: `Bearer ${session.accessToken}`,
+        },
+      });
 
+      const data = await res.json();
+
+      if (session.provider === "github") {
+        setRepos(data);
+      } else {
+        // Bitbucket wraps results in `values`, and fields differ
+       const normalized = data.values.map((r: any) => ({
+  id: r.uuid,
+  name: r.slug,               // <-- MUST be slug
+  displayName: r.name,       // optional, for UI only
+  description: r.description,
+  default_branch: r.mainbranch?.name,
+  owner: {
+    login: r.workspace.slug, // <-- workspace
+  },
+}));
+
+
+        setRepos(normalized);
+      }
+    } catch (err) {
+      toast.error("Failed to fetch repos");
+      console.error("Failed to fetch repos", err);
+    } finally {
+      setReposLoading(false);
+    }
+  };
+
+  fetchRepos();
+}, [session]);
 
 
   return (

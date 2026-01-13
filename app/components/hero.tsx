@@ -1,5 +1,6 @@
 import React from 'react'
 import { FiGithub } from "react-icons/fi";
+import { FaBitbucket } from "react-icons/fa6";
 import { useSession, signIn, signOut } from "next-auth/react"
 
 
@@ -21,7 +22,7 @@ function hero() {
                 </h2>
 
                 <p className="text-sm md:text-base text-muted-foreground max-w-xl">
-                  Link your GitHub account and we&apos;ll automatically pull your repositories, run AI analysis on
+                  Securely connect your GitHub or Bitbucket account and we&apos;ll automatically pull your repositories, run AI analysis on
                   structure, readability, and documentation, and surface the highest-impact improvements.
                 </p>
 
@@ -41,14 +42,23 @@ function hero() {
                 </ul>
 
                 <div className="flex flex-wrap items-center gap-4">
-                  <button
-                    type="button"
-                    onClick={() => signIn()}
-                    className="inline-flex items-center gap-2 rounded-full border px-5 py-2.5 text-sm font-medium bg-foreground text-background hover:opacity-90 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-primary"
-                  >
-                    <FiGithub className="h-4 w-4" />
-                    Continue with GitHub
-                  </button>
+  <button
+    type="button"
+    onClick={() => signIn("github")}
+    className="inline-flex items-center justify-center gap-2 rounded-md border px-5 py-2.5 text-sm font-medium bg-foreground text-background hover:opacity-90 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-primary"
+  >
+    <FiGithub className="h-4 w-4" />
+    Continue with GitHub
+  </button>
+
+  <button
+    type="button"
+    onClick={() => signIn("bitbucket")}
+    className="inline-flex items-center justify-center gap-2 rounded-md border px-5 py-2.5 text-sm font-medium bg-[#2684FF] text-white hover:brightness-110 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-[#2684FF]"
+  >
+    <FaBitbucket className="h-4 w-4" />
+    Continue with Bitbucket
+  </button>
 
                   <p className="text-xs text-muted-foreground">
                     Read-only access. We only use your repos for analysis.
