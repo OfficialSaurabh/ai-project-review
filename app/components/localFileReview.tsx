@@ -144,7 +144,7 @@ export default function LocalFileReview({ setReviewLocalFile }: LocalFileReviewP
       const project = `local:${owner}:${localProjectId}`;
 
       const res = await fetch(
-        `http://127.0.0.1:8000/reviews/files?project=${encodeURIComponent(project)}`,
+        `${process.env.NEXT_PUBLIC_BASE_URL}/reviews/files?project=${encodeURIComponent(project)}`,
         {
           method: "GET",
           headers: {
@@ -180,7 +180,7 @@ export default function LocalFileReview({ setReviewLocalFile }: LocalFileReviewP
     setError(null);
 
     try {
-      const res = await fetch("http://127.0.0.1:8000/review", {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/review`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -243,7 +243,7 @@ export default function LocalFileReview({ setReviewLocalFile }: LocalFileReviewP
     });
 
     const res = await fetch(
-      `http://127.0.0.1:8000/reviews/last?${params.toString()}`
+      `${process.env.NEXT_PUBLIC_BASE_URL}/reviews/last?${params.toString()}`
     );
 
     if (!res.ok) throw new Error("No review");

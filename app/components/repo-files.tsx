@@ -190,7 +190,7 @@ const fetchLastReview = async (path?: string) => {
   setIsReviewLoading(true);
 
   try {
-    const baseUrl = "http://127.0.0.1:8000";
+    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL;
 
     const commonParams = new URLSearchParams({
       provider: session.provider, // "github" | "bitbucket"
@@ -256,7 +256,7 @@ const fetchLastReview = async (path?: string) => {
     });
 
     const res = await fetch(
-      `http://127.0.0.1:8000/reviews/files?${params.toString()}`,
+      `${process.env.NEXT_PUBLIC_BASE_URL}/reviews/files?${params.toString()}`,
       {
         method: "GET",
         headers: {
