@@ -1,67 +1,130 @@
-import Image from "next/image";
-import LoginBtn from "../app/components/login-btn";
+"use client";
+
+import { useSession } from "next-auth/react";
+import { useEffect, useState } from "react";
+import NavBar from "./components/nav-bar";
+import RepoList from "./components/repo-list";
+import Hero from "./components/hero";
+import LocalFileReview from "./components/localFileReview";
+import { Button } from "@headlessui/react";
+import { toast } from "sonner"
+
+
+interface Repo {
+  id: string | number;
+  name: string;
+  full_name: string;
+  description: string;
+  language?: string;
+  stargazers_count?: number;
+  forks_count?: number;
+  default_branch?: string;
+  owner: {
+    login: string;
+  };
+}
 
 export default function Home() {
+  const { data: session } = useSession();
+  const [repos, setRepos] = useState<Repo[]>([]);
+  const [reposLoading, setReposLoading] = useState(false);
+  const [reviewLocalFile, setReviewLocalFile] = useState(false);
+  
+ useEffect(() => {
+  if (!session?.accessToken || !session?.provider) return;
+
+  setReposLoading(true);
+
+  const fetchRepos = async () => {
+    try {
+      let url = "";
+
+      if (session.provider === "github") {
+        url = "https://api.github.com/user/repos?sort=updated&direction=desc";
+      } else if (session.provider === "bitbucket") {
+        url = "https://api.bitbucket.org/2.0/repositories?role=member&sort=-updated_on";
+      } else {
+        throw new Error("Unsupported provider");
+      }
+
+      const res = await fetch(url, {
+        headers: {
+          Authorization: `Bearer ${session.accessToken}`,
+        },
+      });
+
+      const data = await res.json();
+
+      if (session.provider === "github") {
+        setRepos(data);
+      } else {
+        // Bitbucket wraps results in `values`, and fields differ
+       const normalized = data.values.map((r: any) => ({
+  id: r.uuid,
+  name: r.slug,               // <-- MUST be slug
+  displayName: r.name,       // optional, for UI only
+  description: r.description,
+  default_branch: r.mainbranch?.name,
+  owner: {
+    login: r.workspace.slug, // <-- workspace
+  },
+}));
+
+
+        setRepos(normalized);
+      }
+    } catch (err) {
+      toast.error("Failed to fetch repos");
+      console.error("Failed to fetch repos", err);
+    } finally {
+      setReposLoading(false);
+    }
+  };
+
+  fetchRepos();
+}, [session]);
+
+
   return (
-    <div className="flex min-h-screen items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <LoginBtn />
-      <main className="flex min-h-screen w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
+    <>
+      <NavBar />
+      <div className="min-h-screen p-6 md:p-8">
+        <div className="max-w-7xl mx-auto space-y-8">
+          <div className="text-center mb-12 animate-in fade-in slide-in-from-top duration-700">
+            <h1 className="text-5xl md:text-6xl font-bold mb-4 bg-gradient-to-r from-primary via-foreground to-primary bg-clip-text text-transparent">
+              AI Project Analyzer
+            </h1>
+            <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
+              Analyze code quality, structure, and documentation with detailed insights and actionable suggestions
+            </p>
+          </div>
+          {session ? (
+            <>
+                <div className=" flex justify-end ">
+            <button
+              type="button"
+              onClick={() => setReviewLocalFile(true)}
+              className="text-sm border rounded px-3 py-1 hover:border-accent  transition-colors flex items-center gap-2"
             >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
+              {/* <FiGithub className="h-4 w-4" /> */}
+              Review Local File
+            </button>
+          </div>
+              {reviewLocalFile && (
+                
+                <LocalFileReview setReviewLocalFile={setReviewLocalFile} />
+              )}
+
+              <RepoList
+                repos={repos}
+                reposLoading={reposLoading}
+              />
+            </>
+          ) : (
+            <Hero />
+          )}
         </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
-        </div>
-      </main>
-    </div>
+      </div>
+    </>
   );
 }
