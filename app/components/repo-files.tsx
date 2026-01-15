@@ -141,17 +141,6 @@ export const FileExplorer = ({
     };
   };
 
-  // const fetchBranches = async () => {
-  //   try {
-  //     const res = await fetch(
-  //       `https://api.github.com/repos/${owner}/${repoName}/branches`
-  //     );
-  //     const data = await res.json();
-  //     setBranches(data.map((b: any) => b.name));
-  //   } catch (err) {
-  //     console.error("Failed to fetch branches", err);
-  //   }
-  // };
   const fetchBranches = async () => {
     if (!session?.provider) {
       toast.error("Provider missing from session");
@@ -159,6 +148,18 @@ export const FileExplorer = ({
     }
 
     try {
+      let defaultBranch = "";
+
+      if (session.provider === "github") {
+        const repoRes = await fetch(`https://api.github.com/repos/${owner}/${repoName}`);
+        const repoData = await repoRes.json();
+        defaultBranch = repoData.default_branch;
+      } else if (session.provider === "bitbucket") {
+        const repoRes = await fetch(`https://api.bitbucket.org/2.0/repositories/${owner}/${repoName}`);
+        const repoData = await repoRes.json();
+        defaultBranch = repoData.mainbranch.name;
+      }
+
       let url = "";
 
       if (session.provider === "github") {
@@ -182,9 +183,7 @@ export const FileExplorer = ({
       setBranches(branchNames);
 
       // Set default only once, not hardcoded "main"
-      if (!selectedBranch && branchNames.length > 0) {
-        setSelectedBranch(branchNames[0]);
-      }
+      setSelectedBranch(defaultBranch || branchNames[0]);
     } catch (err) {
       console.error("Failed to fetch branches", err);
     }

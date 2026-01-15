@@ -10,6 +10,7 @@ import { GoRepoForked } from "react-icons/go";
 interface Repo {
   id: number;
   name: string;
+  slug?: string;
   full_name: string;
   description: string;
   language: string;
@@ -38,7 +39,9 @@ export default function RepoList({
       {repos.map((repo) => (
         <Link
           key={repo.id}
-          href={`/repos/${encodeURIComponent(repo.owner.login)}/${encodeURIComponent(repo.name)}`}
+          href={`/repos/${encodeURIComponent(repo.owner.login)}/${encodeURIComponent(
+            repo.slug ?? repo.name
+          )}`}
           className="block border rounded-lg transition h-full"
         >
           <div className="glass-card p-6 rounded-xl hover:border-primary/50 transition-all  group h-full flex flex-col" >

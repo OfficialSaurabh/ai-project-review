@@ -12,23 +12,28 @@ import { toast } from "sonner"
 
 interface Repo {
   id: number;
-  name: string;
+  name: string;          // display
+  slug?: string;        // bitbucket
   full_name: string;
-  description: string;
-  language: string;
-  stargazers_count: number;
-  forks_count: number;
+  description?: string;
+  language?: string;
+  stargazers_count?: number;
+  forks_count?: number;
   default_branch?: string;
   owner: {
     login: string;
   };
 }
 
+
+
 export default function Home() {
   const { data: session } = useSession();
   const [repos, setRepos] = useState<Repo[]>([]);
   const [reposLoading, setReposLoading] = useState(false);
   const [reviewLocalFile, setReviewLocalFile] = useState(false);
+  const [search, setSearch] = useState("");
+
 
   useEffect(() => {
     if (!session?.accessToken || !session?.provider) return;
@@ -60,16 +65,20 @@ export default function Home() {
         } else {
           // Bitbucket wraps results in `values`, and fields differ
           const normalized = data.values.map((r: any) => ({
-            id: Math.random(), // Generate numeric id for Bitbucket repos
-            name: r.slug,               // <-- MUST be slug
-            full_name: r.full_slug,
-            displayName: r.name,       // optional, for UI only
+            id: r.uuid || r.full_slug,
+            name: r.name,                 // display
+            slug: r.slug,                 // URL
+            full_name: r.full_slug || `${r.workspace.slug}/${r.slug}`,
+            displayName: r.name,
             description: r.description,
+            language: r.language ?? "N/A",
+            forks_count: r.fork_policy ? 1 : 0, // placeholder or fetch separately
             default_branch: r.mainbranch?.name,
             owner: {
-              login: r.workspace.slug, // <-- workspace
+              login: r.workspace.slug,
             },
           }));
+
 
 
           setRepos(normalized);
@@ -84,6 +93,15 @@ export default function Home() {
 
     fetchRepos();
   }, [session]);
+
+  const q = search.toLowerCase();
+
+  const filteredRepos = repos.filter((r) =>
+    (r.name || "").toLowerCase().includes(q) ||
+    (r.full_name || "").toLowerCase().includes(q) ||
+    (r.description || "").toLowerCase().includes(q)
+  );
+
 
 
   return (
@@ -115,11 +133,21 @@ export default function Home() {
 
                 <LocalFileReview setReviewLocalFile={setReviewLocalFile} />
               )}
+              <div className="mb-4 max-w-md">
+                <input
+                  type="text"
+                  placeholder="Find a repository…"
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  className="w-full px-3 py-2 border rounded-lg bg-background"
+                />
+              </div>
 
               <RepoList
-                repos={repos}
+                repos={filteredRepos}
                 reposLoading={reposLoading}
               />
+
             </>
           ) : (
             <Hero />
