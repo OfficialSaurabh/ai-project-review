@@ -142,16 +142,53 @@ export const FileExplorer = ({
   };
 
   const fetchBranches = async () => {
+    if (!session?.provider) {
+      toast.error("Provider missing from session");
+      return;
+    }
+
     try {
-      const res = await fetch(
-        `https://api.github.com/repos/${owner}/${repoName}/branches`
-      );
+      let defaultBranch = "";
+
+      if (session.provider === "github") {
+        const repoRes = await fetch(`https://api.github.com/repos/${owner}/${repoName}`);
+        const repoData = await repoRes.json();
+        defaultBranch = repoData.default_branch;
+      } else if (session.provider === "bitbucket") {
+        const repoRes = await fetch(`https://api.bitbucket.org/2.0/repositories/${owner}/${repoName}`);
+        const repoData = await repoRes.json();
+        defaultBranch = repoData.mainbranch.name;
+      }
+
+      let url = "";
+
+      if (session.provider === "github") {
+        url = `https://api.github.com/repos/${owner}/${repoName}/branches`;
+      } else if (session.provider === "bitbucket") {
+        url = `https://api.bitbucket.org/2.0/repositories/${owner}/${repoName}/refs/branches`;
+      } else {
+        throw new Error("Unsupported provider");
+      }
+
+      const res = await fetch(url);
+      if (!res.ok) throw new Error(`Branch fetch failed: ${res.status}`);
+
       const data = await res.json();
-      setBranches(data.map((b: any) => b.name));
+
+      const branchNames =
+        session.provider === "github"
+          ? data.map((b: any) => b.name)
+          : data.values.map((b: any) => b.name);
+
+      setBranches(branchNames);
+
+      // Set default only once, not hardcoded "main"
+      setSelectedBranch(defaultBranch || branchNames[0]);
     } catch (err) {
       console.error("Failed to fetch branches", err);
     }
   };
+
 
 
   const sendReviewRequest = async (payload: Record<string, any>) => {
@@ -390,18 +427,18 @@ export const FileExplorer = ({
               <div className="relative">
                 <BiGitBranch className="absolute left-3 top-1/2 -translate-y-1/2 text-primary pointer-events-none" />
 
-                <select
+                {selectedBranch && (
+                  <select
+                    value={selectedBranch}
+                    onChange={(e) => setSelectedBranch(e.target.value)}
+                    className="border h-9 pl-10 pr-3 rounded-xl px-2 py-1 bg-background"
+                  >
+                    {branches.map((b) => (
+                      <option key={b} value={b}>{b}</option>
+                    ))}
+                  </select>
+                )}
 
-                  value={selectedBranch}
-                  onChange={(e) => setSelectedBranch(e.target.value)}
-                  className="border  h-9 pl-10 pr-3 rounded-xl px-2 py-1 bg-background "
-                >
-                  {branches.map((b) => (
-                    <option key={b} value={b}>
-                      {b}
-                    </option>
-                  ))}
-                </select>
               </div>
 
               <Button
