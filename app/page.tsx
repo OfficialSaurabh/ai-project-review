@@ -12,18 +12,20 @@ import { toast } from "sonner"
 
 interface Repo {
   id: number;
-  name: string;          // display
-  slug?: string;        // bitbucket
+  name: string;
+  slug?: string;
   full_name: string;
   description?: string;
-  language?: string;
-  stargazers_count?: number;
-  forks_count?: number;
+  language: string;
+  stargazers_count: number;
+  forks_count: number;
   default_branch?: string;
+  reposLoading?: boolean;
   owner: {
     login: string;
   };
 }
+
 
 
 
