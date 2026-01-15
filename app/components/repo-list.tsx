@@ -15,7 +15,7 @@ interface Repo {
   language: string;
   stargazers_count: number;
   forks_count: number;
-  default_branch: string;
+  default_branch?: string;
   reposLoading?: boolean;
   owner: {
     login: string;
@@ -26,9 +26,9 @@ export default function RepoList({
   repos,
   reposLoading,
 }: Readonly<{ repos: Repo[]; reposLoading?: boolean }>) {
-    if (reposLoading) {
+  if (reposLoading) {
     return <Loader />
-    ;
+      ;
   }
 
   if (!repos?.length) return <p>No repositories found.</p>;

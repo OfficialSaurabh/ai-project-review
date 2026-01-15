@@ -25,7 +25,7 @@ export default function RepoFilesPage() {
   const [files, setFiles] = useState<FileItem[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
- const provider = session?.provider;
+  const provider = session?.provider;
 
 
   useEffect(() => {
@@ -83,81 +83,81 @@ export default function RepoFilesPage() {
     //     setIsLoading(false);
     //   }
     // };
-const fetchFiles = async () => {
-  setIsLoading(true);
-  try {
-    if (provider === "github") {
-      const repoRes = await fetch(
-        `https://api.github.com/repos/${owner}/${name}`,
-        {
-          headers: { Authorization: `Bearer ${session.accessToken}` },
+    const fetchFiles = async () => {
+      setIsLoading(true);
+      try {
+        if (provider === "github") {
+          const repoRes = await fetch(
+            `https://api.github.com/repos/${owner}/${name}`,
+            {
+              headers: { Authorization: `Bearer ${session.accessToken}` },
+            }
+          );
+
+          if (!repoRes.ok) throw new Error("Failed to fetch GitHub repo");
+
+          const repoData = await repoRes.json();
+          const defaultBranch = repoData.default_branch;
+
+          const treeRes = await fetch(
+            `https://api.github.com/repos/${owner}/${name}/git/trees/${defaultBranch}?recursive=1`,
+            {
+              headers: { Authorization: `Bearer ${session.accessToken}` },
+            }
+          );
+
+          if (!treeRes.ok) throw new Error("Failed to fetch GitHub tree");
+
+          const treeData = await treeRes.json();
+          setFiles(treeData.tree || []);
         }
-      );
 
-      if (!repoRes.ok) throw new Error("Failed to fetch GitHub repo");
+        else if (provider === "bitbucket") {
+          // 1. Get repo info
+          const repoRes = await fetch(
+            `https://api.bitbucket.org/2.0/repositories/${owner}/${name}`,
+            {
+              headers: { Authorization: `Bearer ${session.accessToken}` },
+            }
+          );
 
-      const repoData = await repoRes.json();
-      const defaultBranch = repoData.default_branch;
+          if (!repoRes.ok) throw new Error("Failed to fetch Bitbucket repo");
 
-      const treeRes = await fetch(
-        `https://api.github.com/repos/${owner}/${name}/git/trees/${defaultBranch}?recursive=1`,
-        {
-          headers: { Authorization: `Bearer ${session.accessToken}` },
+          const repoData = await repoRes.json();
+          const defaultBranch = repoData.mainbranch.name;
+
+          // 2. Get file tree
+          const treeRes = await fetch(
+            `https://api.bitbucket.org/2.0/repositories/${owner}/${name}/src/${defaultBranch}/`,
+            {
+              headers: { Authorization: `Bearer ${session.accessToken}` },
+            }
+          );
+
+          if (!treeRes.ok) throw new Error("Failed to fetch Bitbucket files");
+
+          const treeData = await treeRes.json();
+
+          const normalized = treeData.values.map((f: any) => ({
+            path: f.path,
+            type: f.type === "commit_file" ? "blob" : "tree",
+            sha: f.commit.hash,
+          }));
+
+          setFiles(normalized);
         }
-      );
 
-      if (!treeRes.ok) throw new Error("Failed to fetch GitHub tree");
-
-      const treeData = await treeRes.json();
-      setFiles(treeData.tree || []);
-    }
-
-    else if (provider === "bitbucket") {
-      // 1. Get repo info
-      const repoRes = await fetch(
-        `https://api.bitbucket.org/2.0/repositories/${owner}/${name}`,
-        {
-          headers: { Authorization: `Bearer ${session.accessToken}` },
+        else {
+          throw new Error("Unknown provider");
         }
-      );
-
-      if (!repoRes.ok) throw new Error("Failed to fetch Bitbucket repo");
-
-      const repoData = await repoRes.json();
-      const defaultBranch = repoData.mainbranch.name;
-
-      // 2. Get file tree
-      const treeRes = await fetch(
-        `https://api.bitbucket.org/2.0/repositories/${owner}/${name}/src/${defaultBranch}/`,
-        {
-          headers: { Authorization: `Bearer ${session.accessToken}` },
-        }
-      );
-
-      if (!treeRes.ok) throw new Error("Failed to fetch Bitbucket files");
-
-      const treeData = await treeRes.json();
-
-      const normalized = treeData.values.map((f: any) => ({
-        path: f.path,
-        type: f.type === "commit_file" ? "blob" : "tree",
-        sha: f.commit.hash,
-      }));
-
-      setFiles(normalized);
-    }
-
-    else {
-      throw new Error("Unknown provider");
-    }
-  } catch (err) {
-    console.error(err);
-    toast.error("Failed to fetch repository files");
-    setFiles([]);
-  } finally {
-    setIsLoading(false);
-  }
-};
+      } catch (err) {
+        console.error(err);
+        toast.error("Failed to fetch repository files");
+        setFiles([]);
+      } finally {
+        setIsLoading(false);
+      }
+    };
 
     fetchFiles();
   }, [owner, name, session?.accessToken]);

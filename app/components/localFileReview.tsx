@@ -1,14 +1,28 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { useParams } from "next/navigation";
 import { useDropzone } from "react-dropzone";
 import { Button } from "@headlessui/react";
 import { AnalysisDashboard } from "./analysis-dashboard";
 import Loader from "./loader";
 import { useSession } from "next-auth/react";
 
-
+type AnalysisResponse = {
+  project: string;
+  overallFileScore: number;
+  createdAt: string;
+  metrics: {
+    testCoverageEstimate: number;
+    documentationScore: number;
+    readability: number;
+  };
+  topIssues: {
+    line: number | null;
+    type: string;
+    severity: "critical" | "major" | "minor";
+    message: string;
+  }[];
+};
 
 
 type LocalFile = {
@@ -19,7 +33,6 @@ type LocalFile = {
   setReviewLocalFile?: (value: boolean) => void;
 };
 
-type ReviewResult = any; // keep flexible for now
 
 const MAX_FILE_SIZE = 200 * 1024; // 200 KB
 const MAX_FILES = 5;
@@ -53,6 +66,7 @@ export default function LocalFileReview({ setReviewLocalFile }: LocalFileReviewP
   const normalizeLocalReviewResponse = (data: any): AnalysisResponse => {
     return {
       project: "Local Files",
+      createdAt: new Date().toISOString(),
       overallFileScore:
         data.file?.overallFileScore ??
         data.overallProjectScore ??
@@ -225,7 +239,6 @@ export default function LocalFileReview({ setReviewLocalFile }: LocalFileReviewP
 
   function reset() {
     setFiles([]);
-    setResult(null);
     setError(null);
   }
 
@@ -280,8 +293,6 @@ export default function LocalFileReview({ setReviewLocalFile }: LocalFileReviewP
         >
 
           <Button
-            variant="ghost"
-            size="icon"
             onClick={(e) => {
               e.stopPropagation();
               e.preventDefault();
@@ -377,6 +388,7 @@ export default function LocalFileReview({ setReviewLocalFile }: LocalFileReviewP
                 setIsReviewOpen(false);
                 setShowFile(true);
               }}
+              fetchFiles={fetchFiles}
             />
           )}
           {/* <button
