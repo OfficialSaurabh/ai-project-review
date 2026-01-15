@@ -15,7 +15,7 @@ interface Repo {
   language: string;
   stargazers_count: number;
   forks_count: number;
-  default_branch: string;
+  default_branch?: string;
   reposLoading?: boolean;
   owner: {
     login: string;
