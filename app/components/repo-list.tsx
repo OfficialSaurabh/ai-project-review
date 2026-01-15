@@ -26,9 +26,9 @@ export default function RepoList({
   repos,
   reposLoading,
 }: Readonly<{ repos: Repo[]; reposLoading?: boolean }>) {
-    if (reposLoading) {
+  if (reposLoading) {
     return <Loader />
-    ;
+      ;
   }
 
   if (!repos?.length) return <p>No repositories found.</p>;

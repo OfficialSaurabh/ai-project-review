@@ -38,13 +38,12 @@ export const HealthScore = ({ score, label }: HealthScoreProps) => {
       </div>
       <div className="mt-4 h-2 bg-secondary/50 rounded-full overflow-hidden">
         <div
-          className={`h-full ${
-            score >= 80
-              ? "bg-success"
-              : score >= 60
+          className={`h-full ${score >= 80
+            ? "bg-success"
+            : score >= 60
               ? "bg-warning"
               : "bg-destructive"
-          } transition-all duration-1000 ease-out`}
+            } transition-all duration-1000 ease-out`}
           style={{ width: `${score}%` }}
         />
       </div>

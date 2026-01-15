@@ -8,6 +8,8 @@ import { AnalysisDashboard } from "./analysis-dashboard";
 import Loader from "./loader";
 import { useSession } from "next-auth/react";
 import { toast } from "sonner"
+import { BiGitBranch } from "react-icons/bi";
+
 
 import { create } from "domain";
 import { log } from "console";
@@ -26,6 +28,18 @@ interface FileExplorerProps {
   webhookUrl?: string;
 }
 
+interface AnalysisResponse {
+  project: string;
+  overallFileScore: number;
+  metrics: {
+    testCoverageEstimate: number;
+    documentationScore: number;
+    readability: number;
+  };
+  topIssues: any[];
+  createdAt: string;
+}
+
 const imageExtensions = [".png", ".jpg", ".jpeg", ".gif", ".svg", ".webp", ".bmp"];
 
 
@@ -41,8 +55,12 @@ export const FileExplorer = ({
   const [showFile, setShowFile] = useState(true);
   const [isReviewOpen, setIsReviewOpen] = useState(false);
   const [lastReviewedFile, setLastReviewedFile] = useState<string | null>(null);
- const [fileList, setFileList] = useState<string[]>([]);
- console.log("files in FileExplorer:", fileList);
+  const [branches, setBranches] = useState<string[]>([]);
+  const [fileLoading, setFileLoading] = useState(false);
+  const [selectedBranch, setSelectedBranch] = useState("main");
+
+  const [fileList, setFileList] = useState<string[]>([]);
+  console.log("files in FileExplorer:", fileList);
 
 
 
@@ -102,6 +120,7 @@ export const FileExplorer = ({
         readability: data.file?.metrics?.readability ?? 0,
       },
       topIssues: data.topIssues ?? [],
+      createdAt: data.createdAt ?? new Date().toISOString(),
     };
   };
   const normalizeLastReviewResponse = (data: any, owner: string, repo: string) => {
@@ -121,6 +140,19 @@ export const FileExplorer = ({
       topIssues: data.issues ?? [],
     };
   };
+
+  const fetchBranches = async () => {
+    try {
+      const res = await fetch(
+        `https://api.github.com/repos/${owner}/${repoName}/branches`
+      );
+      const data = await res.json();
+      setBranches(data.map((b: any) => b.name));
+    } catch (err) {
+      console.error("Failed to fetch branches", err);
+    }
+  };
+
 
   const sendReviewRequest = async (payload: Record<string, any>) => {
     if (!webhookUrl) throw new Error("Missing env: NEXT_PUBLIC_REVIEW_WEBHOOK");
@@ -144,23 +176,23 @@ export const FileExplorer = ({
     }
   };
   const normalizedFileList = fileList.map(p =>
-  p.startsWith("/") ? p.slice(1) : p
-);
+    p.startsWith("/") ? p.slice(1) : p
+  );
 
   const handleReviewFile = async (path: string) => {
     if (!session?.provider || !session?.accessToken) {
-    toast.error("Authentication token missing");
-    return;
-  }
+      toast.error("Authentication token missing");
+      return;
+    }
     const filename = path.startsWith("/") ? path : `/${path}`;
 
     const payload = {
       provider: session.provider,          // github | bitbucket
-    accessToken: session.accessToken,  
+      accessToken: session.accessToken,
       action: "file",
       owner,
       repo: repoName,
-      ref: "main",
+      ref: selectedBranch,
       filename,
     };
 
@@ -180,121 +212,125 @@ export const FileExplorer = ({
     }
   };
 
-const fetchLastReview = async (path?: string) => {
-  if (!session?.provider) {
-    toast.error("Provider missing from session");
-    return;
-  }
+  const fetchLastReview = async (path?: string) => {
+    if (!session?.provider) {
+      toast.error("Provider missing from session");
+      return;
+    }
 
-  console.log("Fetching last review for file:", path);
-  setIsReviewLoading(true);
+    console.log("Fetching last review for file:", path);
+    setIsReviewLoading(true);
 
-  try {
-    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL;
+    try {
+      const baseUrl = process.env.NEXT_PUBLIC_BASE_URL;
 
-    const commonParams = new URLSearchParams({
-      provider: session.provider, // "github" | "bitbucket"
-      owner,
-      repo: repoName,
-      ref: "main",
-    });
-
-    let url = "";
-
-    if (path) {
-      const fileParams = new URLSearchParams({
-        ...Object.fromEntries(commonParams),
-        filename: "/" + path,
+      const commonParams = new URLSearchParams({
+        provider: session.provider, // "github" | "bitbucket"
+        owner,
+        repo: repoName,
+        ref: selectedBranch,
       });
 
-      url = `${baseUrl}/reviews/last?${fileParams.toString()}`;
-    } else {
-      url = `${baseUrl}/reviews/full/last?${commonParams.toString()}`;
-    }
+      let url = "";
 
-    const res = await fetch(url, {
-      headers: { Accept: "application/json" },
-    });
+      if (path) {
+        const fileParams = new URLSearchParams({
+          ...Object.fromEntries(commonParams),
+          filename: "/" + path,
+        });
 
-    if (!res.ok) {
-      throw new Error(`API error: ${res.status}`);
-    }
-
-    const data = await res.json();
-
-    const mappedResponse = normalizeLastReviewResponse(data, owner, repoName);
-
-    console.log("Fetched last review data:", mappedResponse);
-
-    setReviewData(mappedResponse);
-    setIsReviewOpen(true);
-    setShowFile(false);
-  } catch (err) {
-    console.error("Failed to load last review:", err);
-    toast.info("No previous review found.");
-    setReviewData(null);
-    setIsReviewOpen(false);
-    setShowFile(true);
-  } finally {
-    setIsReviewLoading(false);
-  }
-};
-
-
- const fetchFiles = async () => {
-  if (!session?.provider) {
-    toast.error("Provider missing from session");
-    return;
-  }
-
-  try {
-    const params = new URLSearchParams({
-      provider: session.provider, // "github" | "bitbucket"
-      owner,
-      repo: repoName,
-      ref: "main",
-    });
-
-    const res = await fetch(
-      `${process.env.NEXT_PUBLIC_BASE_URL}/reviews/files?${params.toString()}`,
-      {
-        method: "GET",
-        headers: {
-          Accept: "application/json",
-        },
+        url = `${baseUrl}/reviews/last?${fileParams.toString()}`;
+      } else {
+        url = `${baseUrl}/reviews/full/last?${commonParams.toString()}`;
       }
-    );
 
-    if (!res.ok) {
-      throw new Error(`API error: ${res.status}`);
+      const res = await fetch(url, {
+        headers: { Accept: "application/json" },
+      });
+
+      if (!res.ok) {
+        throw new Error(`API error: ${res.status}`);
+      }
+
+      const data = await res.json();
+
+      const mappedResponse = normalizeLastReviewResponse(data, owner, repoName);
+
+      console.log("Fetched last review data:", mappedResponse);
+
+      setReviewData(mappedResponse);
+      setIsReviewOpen(true);
+      setShowFile(false);
+    } catch (err) {
+      console.error("Failed to load last review:", err);
+      toast.info("No previous review found.");
+      setReviewData(null);
+      setIsReviewOpen(false);
+      setShowFile(true);
+    } finally {
+      setIsReviewLoading(false);
+    }
+  };
+
+
+  const fetchFiles = async () => {
+    setFileLoading(true);
+    if (!session?.provider) {
+      toast.error("Provider missing from session");
+      return;
     }
 
-    const data = await res.json();
+    try {
+      const params = new URLSearchParams({
+        provider: session.provider, // "github" | "bitbucket"
+        owner,
+        repo: repoName,
+        ref: selectedBranch,
+      });
 
-    if (!Array.isArray(data.files)) {
-      throw new Error("Invalid response shape: files is not an array");
+      const res = await fetch(
+        `${process.env.NEXT_PUBLIC_BASE_URL}/reviews/files?${params.toString()}`,
+        {
+          method: "GET",
+          headers: {
+            Accept: "application/json",
+          },
+        }
+      );
+
+      if (!res.ok) {
+        throw new Error(`API error: ${res.status}`);
+      }
+
+      const data = await res.json();
+
+      if (!Array.isArray(data.files)) {
+        throw new Error("Invalid response shape: files is not an array");
+      }
+
+      setFileList(data.files);
+    } catch (err) {
+      console.error("Failed to fetch reviewed files:", err);
+      setFileList([]); // fail safe
     }
-
-    setFileList(data.files);
-  } catch (err) {
-    console.error("Failed to fetch reviewed files:", err);
-    setFileList([]); // fail safe
-  }
-};
+    finally {
+      setFileLoading(false);
+    }
+  };
 
 
   const handleFullReview = async () => {
-      if (!session?.provider || !session?.accessToken) {
-    toast.error("Authentication token missing");
-    return;
-  }
+    if (!session?.provider || !session?.accessToken) {
+      toast.error("Authentication token missing");
+      return;
+    }
     const payload = {
       provider: session.provider,
-    accessToken: session.accessToken,
+      accessToken: session.accessToken,
       action: "full",
       owner,
       repo: repoName,
-      ref: "main",
+      ref: selectedBranch,
     };
 
     try {
@@ -307,7 +343,7 @@ const fetchLastReview = async (path?: string) => {
       console.error("Error reviewing repository:", err);
       toast.error("AI review service failed");
       setReviewData(null);
-      setIsReviewOpen(false); 
+      setIsReviewOpen(false);
       setShowFile(true);
     }
   };
@@ -320,8 +356,13 @@ const fetchLastReview = async (path?: string) => {
   };
 
   useEffect(() => {
-  fetchFiles();
-}, [owner, repoName]);
+    fetchBranches();
+  }, [owner, repoName]);
+
+
+  useEffect(() => {
+    fetchFiles();
+  }, [owner, repoName, selectedBranch]);
 
   return (
     <div className="space-y-6 animate-in fade-in duration-500">
@@ -346,13 +387,30 @@ const fetchLastReview = async (path?: string) => {
             >
               View Last Review
             </Button> */}
-             <Button
-                          variant="outline"
-                          onClick={() => fetchLastReview()}
-                          className="border-primary/50 hover:bg-primary hover:text-primary-foreground"
-                        >
-                          Overall Last Review
-                        </Button>
+              <div className="relative">
+                <BiGitBranch className="absolute left-3 top-1/2 -translate-y-1/2 text-primary pointer-events-none" />
+
+                <select
+
+                  value={selectedBranch}
+                  onChange={(e) => setSelectedBranch(e.target.value)}
+                  className="border  h-9 pl-10 pr-3 rounded-xl px-2 py-1 bg-background "
+                >
+                  {branches.map((b) => (
+                    <option key={b} value={b}>
+                      {b}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <Button
+                variant="outline"
+                onClick={() => fetchLastReview()}
+                className="border-primary/50 hover:bg-primary hover:text-primary-foreground"
+              >
+                Overall Last Review
+              </Button>
               <Button
                 className="bg-primary hover:bg-primary/90 text-primary-foreground glow-effect"
                 onClick={() => handleFullReview()}
@@ -363,66 +421,71 @@ const fetchLastReview = async (path?: string) => {
           </div>
 
           <ScrollArea className="h-[600px] pr-4">
-            <div className="space-y-2">
-              {displayFiles.map((file) => (
-                <div
-                  key={file.sha}
-                  className="glass-card p-4 rounded-lg hover:border-primary/50 transition-all group"
-                >
-                  <div className="flex items-center justify-between gap-4">
-                    <div className="flex items-center gap-3 flex-1 min-w-0">
-                      {getFileIcon(file)}
-                      <div className="flex-1 min-w-0">
-                        <p className="font-mono text-sm truncate group-hover:text-primary transition-colors">
-                          {file.path}
-                        </p>
-                        {file.size && (
-                          <p className="text-xs text-muted-foreground mt-1">
-                            {formatFileSize(file.size)}
+            {fileLoading && (
+              <Loader />
+            )}
+            {!fileLoading && (
+              <div className="space-y-2">
+                {displayFiles.map((file) => (
+                  <div
+                    key={file.sha}
+                    className="glass-card p-4 rounded-lg hover:border-primary/50 transition-all group"
+                  >
+                    <div className="flex items-center justify-between gap-4">
+                      <div className="flex items-center gap-3 flex-1 min-w-0">
+                        {getFileIcon(file)}
+                        <div className="flex-1 min-w-0">
+                          <p className="font-mono text-sm truncate group-hover:text-primary transition-colors">
+                            {file.path}
                           </p>
-                        )}
+                          {file.size && (
+                            <p className="text-xs text-muted-foreground mt-1">
+                              {formatFileSize(file.size)}
+                            </p>
+                          )}
+                        </div>
                       </div>
-                    </div>
-                    {/* <Button onClick={ () =>getFileContent(file.path)} >
+                      {/* <Button onClick={ () =>getFileContent(file.path)} >
                     Load Content
                   </Button> */}
-                    {!isImageFile(file.path) && (
-                      <div className="gap-4 flex">
-                        {/* Check if the fileList = file.path then only show the View LAst Review BUtton */}
-                        {normalizedFileList.includes(file.path) && (
+                      {!isImageFile(file.path) && (
+                        <div className="gap-4 flex">
+                          {/* Check if the fileList = file.path then only show the View LAst Review BUtton */}
+                          {normalizedFileList.includes(file.path) && (
 
-                        <Button
-                          variant="outline"
-                          onClick={() => fetchLastReview(file.path)}
-                          className="border-primary/50 hover:bg-primary hover:text-primary-foreground"
-                        >
-                          View Last Review
-                        </Button>
-                        )}
-                        <Button
-                          variant="outline"
-                          onClick={() => handleReviewFile(file.path)}
-                          size="sm"
-                          className="border-primary/50 hover:bg-primary hover:text-primary-foreground shrink-0"
-                        >
-                          <span className="flex items-center gap-1">
-                            Review File
-                            <GoChevronRight className="w-3 h-3" />
-                          </span>
-                        </Button>
-                      </div>
-                    )}
+                            <Button
+                              variant="outline"
+                              onClick={() => fetchLastReview(file.path)}
+                              className="border-primary/50 hover:bg-primary hover:text-primary-foreground"
+                            >
+                              View Last Review
+                            </Button>
+                          )}
+                          <Button
+                            variant="outline"
+                            onClick={() => handleReviewFile(file.path)}
+                            size="sm"
+                            className="border-primary/50 hover:bg-primary hover:text-primary-foreground shrink-0"
+                          >
+                            <span className="flex items-center gap-1">
+                              Review File
+                              <GoChevronRight className="w-3 h-3" />
+                            </span>
+                          </Button>
+                        </div>
+                      )}
 
+                    </div>
                   </div>
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
+            )}
           </ScrollArea>
         </div>
       )}
 
       {!isReviewLoading && isReviewOpen && reviewData && (
-        <AnalysisDashboard response={reviewData} onClose={handleCloseReview}  />
+        <AnalysisDashboard response={reviewData} onClose={handleCloseReview} fetchFiles={fetchFiles} />
       )}
     </div>
   );

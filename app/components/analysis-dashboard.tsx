@@ -28,7 +28,16 @@ interface AnalysisDashboardProps {
     topIssues?: TopIssue[]; // <-- you ARE using this
   };
   onClose: () => void;
+  fetchFiles: () => Promise<void>;
 }
+
+type AnalysisResponse = {
+  project: string;
+  createdAt: string;
+  overallFileScore: number;
+  metrics: AnalysisMetrics;
+  topIssues?: TopIssue[];
+};
 
 type InsightType = "success" | "warning" | "error" | "info";
 
