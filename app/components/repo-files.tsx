@@ -146,16 +146,25 @@ export const FileExplorer = ({
       toast.error("Provider missing from session");
       return;
     }
+    const headers: Record<string, string> =
+      session.provider === "github"
+        ? {
+          Authorization: `Bearer ${session.accessToken}`,
+          Accept: "application/vnd.github+json",
+        }
+        : {
+          Authorization: `Bearer ${session.accessToken}`,
+        };
 
     try {
       let defaultBranch = "";
 
       if (session.provider === "github") {
-        const repoRes = await fetch(`https://api.github.com/repos/${owner}/${repoName}`);
+        const repoRes = await fetch(`https://api.github.com/repos/${owner}/${repoName}`, { headers });
         const repoData = await repoRes.json();
         defaultBranch = repoData.default_branch;
       } else if (session.provider === "bitbucket") {
-        const repoRes = await fetch(`https://api.bitbucket.org/2.0/repositories/${owner}/${repoName}`);
+        const repoRes = await fetch(`https://api.bitbucket.org/2.0/repositories/${owner}/${repoName}`, { headers });
         const repoData = await repoRes.json();
         defaultBranch = repoData.mainbranch.name;
       }
@@ -170,7 +179,7 @@ export const FileExplorer = ({
         throw new Error("Unsupported provider");
       }
 
-      const res = await fetch(url);
+      const res = await fetch(url, { headers });
       if (!res.ok) throw new Error(`Branch fetch failed: ${res.status}`);
 
       const data = await res.json();
