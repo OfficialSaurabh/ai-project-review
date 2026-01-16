@@ -47,7 +47,7 @@ interface AnalysisResponse {
   createdAt: string;
 }
 
-const imageExtensions = [".png", ".jpg", ".jpeg", ".gif", ".svg", ".webp", ".bmp"];
+const imageExtensions = [".png", ".jpg", ".jpeg", ".gif", ".svg", ".webp", ".bmp", ".ico"];
 
 
 export const FileExplorer = ({
@@ -68,6 +68,8 @@ export const FileExplorer = ({
   const [selectedPath, setSelectedPath] = useState<string | null>(null);
   const [selectedContent, setSelectedContent] = useState<string>("");
   const [isFileLoading, setIsFileLoading] = useState(false);
+  const [branchFiles, setBranchFiles] = useState<FileItem[]>([]);
+
 
 
 
@@ -94,10 +96,10 @@ export const FileExplorer = ({
     if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
     return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
   };
-
   const fileTree = buildFileTree(
-    files.filter(f => f.type === "blob").map(f => f.path)
+    branchFiles.map(f => f.path)
   );
+
 
 
   const getFileContent = async (path: string): Promise<void> => {
@@ -212,6 +214,63 @@ export const FileExplorer = ({
       console.error("Failed to fetch branches", err);
     }
   };
+
+  const fetchBranchTree = async () => {
+    if (!session?.provider || !session?.accessToken) return;
+
+    let url = "";
+    const headers: Record<string, string> = {
+      Authorization: `Bearer ${session.accessToken}`,
+    };
+
+    if (session.provider === "github") {
+      url = `https://api.github.com/repos/${owner}/${repoName}/git/trees/${selectedBranch}?recursive=1`;
+      headers.Accept = "application/vnd.github+json";
+    }
+
+    if (session.provider === "bitbucket") {
+      const encodedBranch = encodeURIComponent(selectedBranch);
+      url = `https://api.bitbucket.org/2.0/repositories/${owner}/${repoName}/src/${encodedBranch}/`;
+
+    }
+
+    console.log("BB:", owner, repoName, selectedBranch);
+
+    const res = await fetch(url, { headers });
+    if (!res.ok) throw new Error(`Tree fetch failed: ${res.status}`);
+
+    const data = await res.json();
+
+    if (session.provider === "github") {
+      setBranchFiles(
+        data.tree
+          .filter((f: any) => f.type === "blob")
+          .map((f: any) => ({
+            path: f.path,
+            type: "blob",
+            sha: f.sha,
+          }))
+      );
+    }
+
+    if (session.provider === "bitbucket") {
+      setBranchFiles(
+        data.values
+          .filter((f: any) => f.type === "commit_file")
+          .map((f: any) => ({
+            path: f.path,       // correct
+            type: "blob",
+            sha: f.path,       // Bitbucket does not expose blob SHA here
+          }))
+      );
+    }
+  };
+
+  useEffect(() => {
+    if (selectedBranch) {
+      fetchBranchTree();
+    }
+  }, [selectedBranch]);
 
 
 
@@ -517,6 +576,7 @@ export const FileExplorer = ({
             </ScrollArea>
 
             <div className="relative flex flex-col h-full">
+
               {selectedPath && !isImageFile(selectedPath) && (
                 <div className="absolute top-5 right-10 flex gap-2 z-10">
                   {normalizedFileList.includes(selectedPath) && (
@@ -539,7 +599,7 @@ export const FileExplorer = ({
               )}
 
               <ScrollArea className=" h-[600px] flex-1 p-2 font-mono text-sm bg-muted rounded-lg">
-                {isFileLoading  ? (
+                {isFileLoading || fileLoading ? (
                   <CodeSkeleton />
                 ) : selectedPath ? (
                   <CodeViewer
