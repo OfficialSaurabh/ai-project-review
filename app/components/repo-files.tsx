@@ -11,6 +11,7 @@ import { toast } from "sonner"
 import { BiGitBranch } from "react-icons/bi";
 import { buildFileTree } from "../utils/buildFileTree";
 import { FileTree } from "./file-tree"
+import { fetchFileContent } from "../utils/fetchFileContent";
 
 
 
@@ -62,6 +63,8 @@ export const FileExplorer = ({
   const [fileLoading, setFileLoading] = useState(false);
   const [selectedBranch, setSelectedBranch] = useState("main");
   const [selectedPath, setSelectedPath] = useState<string | null>(null);
+  const [selectedContent, setSelectedContent] = useState<string>("");
+
 
   const [fileList, setFileList] = useState<string[]>([]);
   console.log("files in FileExplorer:", fileList);
@@ -472,24 +475,69 @@ export const FileExplorer = ({
               </Button>
             </div>
           </div>
+          <div className="grid grid-cols-[300px_1fr] h-[600px] gap-4">
 
-          <ScrollArea className="h-[600px] pr-4">
-            {fileLoading && (
-              <Loader />
-            )}
-            {!fileLoading && (
-              <div className="space-y-2">
-                <FileTree
-                  nodes={fileTree}
-                  selectedPath={selectedPath}
-                  onSelect={(path) => {
-                    setSelectedPath(path);
-                    handleReviewFile(path); // or only highlight, your choice
-                  }}
-                />
-              </div>
-            )}
-          </ScrollArea>
+            <ScrollArea className="h-[600px] pr-4">
+              {fileLoading && (
+                <Loader />
+              )}
+              {!fileLoading && (
+                <div className="space-y-2">
+                  <FileTree
+                    nodes={fileTree}
+                    selectedPath={selectedPath}
+                    onSelect={async (path) => {
+                      setSelectedPath(path);
+
+                      const content = await fetchFileContent(
+                        owner,
+                        repoName,
+                        path,
+                        selectedBranch,
+                        session!.accessToken!
+                      );
+
+                      setSelectedContent(content);
+                    }}
+                  />
+
+                </div>
+              )}
+            </ScrollArea>
+
+            <div className="relative flex flex-col">
+              {selectedPath && (
+                <div className="absolute top-2 right-2 flex gap-2 z-10">
+                  {normalizedFileList.includes(selectedPath) && (
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => fetchLastReview(selectedPath)}
+                    >
+                      View Last Review
+                    </Button>
+                  )}
+
+                  <Button
+                    size="sm"
+                    onClick={() => handleReviewFile(selectedPath)}
+                  >
+                    Review File
+                  </Button>
+                </div>
+              )}
+
+              <ScrollArea className="  flex-1 p-4 font-mono text-sm bg-muted rounded-lg">
+                {selectedPath ? (
+                  <pre className="whitespace-pre-wrap h-[500px]">{selectedContent}</pre>
+                ) : (
+                  <div className="text-muted-foreground">
+                    Select a file to view its content
+                  </div>
+                )}
+              </ScrollArea>
+            </div>
+          </div>
         </div>
       )}
 
