@@ -9,6 +9,9 @@ import Loader from "./loader";
 import { useSession } from "next-auth/react";
 import { toast } from "sonner"
 import { BiGitBranch } from "react-icons/bi";
+import { buildFileTree } from "../utils/buildFileTree";
+import { FileTree } from "./file-tree"
+
 
 
 import { create } from "domain";
@@ -58,6 +61,7 @@ export const FileExplorer = ({
   const [branches, setBranches] = useState<string[]>([]);
   const [fileLoading, setFileLoading] = useState(false);
   const [selectedBranch, setSelectedBranch] = useState("main");
+  const [selectedPath, setSelectedPath] = useState<string | null>(null);
 
   const [fileList, setFileList] = useState<string[]>([]);
   console.log("files in FileExplorer:", fileList);
@@ -83,7 +87,10 @@ export const FileExplorer = ({
     return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
   };
 
-  const displayFiles = files.filter((f) => f.type === "blob");
+  const fileTree = buildFileTree(
+    files.filter(f => f.type === "blob").map(f => f.path)
+  );
+
 
   const getFileContent = async (path: string): Promise<void> => {
     if (!repoName) return;
@@ -422,7 +429,7 @@ export const FileExplorer = ({
             <div>
               <h2 className="text-2xl font-bold font-mono mb-1">{repoName}</h2>
               <p className="text-muted-foreground">
-                {displayFiles.length} files found
+                {/* {displayFiles.length} files found */}
               </p>
             </div>
             <div className=" gap-4 flex">
@@ -472,58 +479,14 @@ export const FileExplorer = ({
             )}
             {!fileLoading && (
               <div className="space-y-2">
-                {displayFiles.map((file) => (
-                  <div
-                    key={file.sha}
-                    className="glass-card p-4 rounded-lg hover:border-primary/50 transition-all group"
-                  >
-                    <div className="flex items-center justify-between gap-4">
-                      <div className="flex items-center gap-3 flex-1 min-w-0">
-                        {getFileIcon(file)}
-                        <div className="flex-1 min-w-0">
-                          <p className="font-mono text-sm truncate group-hover:text-primary transition-colors">
-                            {file.path}
-                          </p>
-                          {file.size && (
-                            <p className="text-xs text-muted-foreground mt-1">
-                              {formatFileSize(file.size)}
-                            </p>
-                          )}
-                        </div>
-                      </div>
-                      {/* <Button onClick={ () =>getFileContent(file.path)} >
-                    Load Content
-                  </Button> */}
-                      {!isImageFile(file.path) && (
-                        <div className="gap-4 flex">
-                          {/* Check if the fileList = file.path then only show the View LAst Review BUtton */}
-                          {normalizedFileList.includes(file.path) && (
-
-                            <Button
-                              variant="outline"
-                              onClick={() => fetchLastReview(file.path)}
-                              className="border-primary/50 hover:bg-primary hover:text-primary-foreground"
-                            >
-                              View Last Review
-                            </Button>
-                          )}
-                          <Button
-                            variant="outline"
-                            onClick={() => handleReviewFile(file.path)}
-                            size="sm"
-                            className="border-primary/50 hover:bg-primary hover:text-primary-foreground shrink-0"
-                          >
-                            <span className="flex items-center gap-1">
-                              Review File
-                              <GoChevronRight className="w-3 h-3" />
-                            </span>
-                          </Button>
-                        </div>
-                      )}
-
-                    </div>
-                  </div>
-                ))}
+                <FileTree
+                  nodes={fileTree}
+                  selectedPath={selectedPath}
+                  onSelect={(path) => {
+                    setSelectedPath(path);
+                    handleReviewFile(path); // or only highlight, your choice
+                  }}
+                />
               </div>
             )}
           </ScrollArea>
