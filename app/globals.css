@@ -153,3 +153,12 @@
     box-shadow: 0 0 20px hsl(var(--glow) / 0.3);
   }
 }
+
+ pre[class*="language-"] {
+  background: #202E40 !important;
+}
+code[class*="language-"] {
+  background: transparent !important;
+}
+
+

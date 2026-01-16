@@ -12,11 +12,14 @@ import { BiGitBranch } from "react-icons/bi";
 import { buildFileTree } from "../utils/buildFileTree";
 import { FileTree } from "./file-tree"
 import { fetchFileContent } from "../utils/fetchFileContent";
+import { CodeViewer } from "./code-viewer";
+import { getLanguage } from "../utils/getLanguage";
 
 
 
 import { create } from "domain";
 import { log } from "console";
+import CodeSkeleton from "./code-skeleton";
 
 interface FileItem {
   path: string;
@@ -64,6 +67,8 @@ export const FileExplorer = ({
   const [selectedBranch, setSelectedBranch] = useState("main");
   const [selectedPath, setSelectedPath] = useState<string | null>(null);
   const [selectedContent, setSelectedContent] = useState<string>("");
+  const [isFileLoading, setIsFileLoading] = useState(false);
+
 
 
   const [fileList, setFileList] = useState<string[]>([]);
@@ -488,26 +493,32 @@ export const FileExplorer = ({
                     selectedPath={selectedPath}
                     onSelect={async (path) => {
                       setSelectedPath(path);
+                      setIsFileLoading(true);
 
-                      const content = await fetchFileContent(
-                        owner,
-                        repoName,
-                        path,
-                        selectedBranch,
-                        session!.accessToken!
-                      );
-
-                      setSelectedContent(content);
+                      try {
+                        const content = await fetchFileContent(
+                          owner,
+                          repoName,
+                          path,
+                          selectedBranch,
+                          session!.accessToken!,
+                          session!.provider!,
+                        );
+                        setSelectedContent(content);
+                      } finally {
+                        setIsFileLoading(false);
+                      }
                     }}
+
                   />
 
                 </div>
               )}
             </ScrollArea>
 
-            <div className="relative flex flex-col">
+            <div className="relative flex flex-col h-full">
               {selectedPath && (
-                <div className="absolute top-2 right-2 flex gap-2 z-10">
+                <div className="absolute top-8 right-10 flex gap-2 z-10">
                   {normalizedFileList.includes(selectedPath) && (
                     <Button
                       size="sm"
@@ -528,8 +539,13 @@ export const FileExplorer = ({
               )}
 
               <ScrollArea className="  flex-1 p-4 font-mono text-sm bg-muted rounded-lg">
-                {selectedPath ? (
-                  <pre className="whitespace-pre-wrap h-[500px]">{selectedContent}</pre>
+                {isFileLoading ? (
+                  <CodeSkeleton />
+                ) : selectedPath ? (
+                  <CodeViewer
+                    code={selectedContent}
+                    language={getLanguage(selectedPath!)}
+                  />
                 ) : (
                   <div className="text-muted-foreground">
                     Select a file to view its content
