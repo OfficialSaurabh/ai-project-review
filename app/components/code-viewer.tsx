@@ -1,6 +1,8 @@
 "use client";
 import { useEffect } from "react";
 import Prism from "prismjs";
+import "prismjs/plugins/line-numbers/prism-line-numbers.css";
+import "prismjs/plugins/line-numbers/prism-line-numbers";
 import "prismjs/themes/prism-okaidia.css"
 import "prismjs/components/prism-typescript";
 import "prismjs/components/prism-javascript";
@@ -22,7 +24,7 @@ export const CodeViewer = ({ code, language }: Props) => {
 
   return (
 
-    <pre className="text-sm h-[570px] w-[900px] rounded-lg overflow-auto">
+    <pre className=" line-numbers text-sm h-[570px] w-[900px] rounded-lg overflow-auto">
       <code className={`language-${language}`}>{code}</code>
     </pre>
   );

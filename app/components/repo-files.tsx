@@ -64,7 +64,7 @@ export const FileExplorer = ({
   const [lastReviewedFile, setLastReviewedFile] = useState<string | null>(null);
   const [branches, setBranches] = useState<string[]>([]);
   const [fileLoading, setFileLoading] = useState(false);
-  const [selectedBranch, setSelectedBranch] = useState("main");
+  const [selectedBranch, setSelectedBranch] = useState<string>("");
   const [selectedPath, setSelectedPath] = useState<string | null>(null);
   const [selectedContent, setSelectedContent] = useState<string>("");
   const [isFileLoading, setIsFileLoading] = useState(false);
@@ -517,8 +517,8 @@ export const FileExplorer = ({
             </ScrollArea>
 
             <div className="relative flex flex-col h-full">
-              {selectedPath && (
-                <div className="absolute top-8 right-10 flex gap-2 z-10">
+              {selectedPath && !isImageFile(selectedPath) && (
+                <div className="absolute top-5 right-10 flex gap-2 z-10">
                   {normalizedFileList.includes(selectedPath) && (
                     <Button
                       size="sm"
@@ -538,8 +538,8 @@ export const FileExplorer = ({
                 </div>
               )}
 
-              <ScrollArea className="  flex-1 p-4 font-mono text-sm bg-muted rounded-lg">
-                {isFileLoading ? (
+              <ScrollArea className=" h-[600px] flex-1 p-2 font-mono text-sm bg-muted rounded-lg">
+                {isFileLoading  ? (
                   <CodeSkeleton />
                 ) : selectedPath ? (
                   <CodeViewer
