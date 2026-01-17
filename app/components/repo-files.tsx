@@ -531,12 +531,21 @@ export const FileExplorer = ({
               >
                 Overall Last Review
               </Button>
-              <Button
-                className="bg-primary hover:bg-primary/90 text-primary-foreground glow-effect cursor-pointer"
-                onClick={() => handleFullReview()}
-              >
-                Review Full Project
-              </Button>
+              <div className="relative group">
+                <Button
+                  className="bg-primary hover:bg-primary/90 text-primary-foreground glow-effect cursor-pointer"
+                  onClick={handleFullReview}
+                >
+                  Review Full Project
+                </Button>
+
+                <span className="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 
+                   whitespace-nowrap rounded bg-black px-2 py-1 text-xs text-white 
+                   opacity-0 group-hover:opacity-100 transition-opacity text-wrap pointer-events-none">
+                  Large repositories may exceed system limits. For optimal results, review smaller project or file.
+                </span>
+              </div>
+
             </div>
           </div>
           <div className="grid grid-cols-1 lg:grid-cols-[300px_1fr] h-[600px] gap-4">
