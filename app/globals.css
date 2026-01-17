@@ -153,3 +153,19 @@
     box-shadow: 0 0 20px hsl(var(--glow) / 0.3);
   }
 }
+
+ pre[class*="language-"] {
+  background: transparent !important;
+}
+code[class*="language-"] {
+  background: transparent !important;
+}
+
+/* Remove the vertical divider between line numbers and code */
+.line-numbers .line-numbers-rows {
+  border-right: none !important;
+  background: transparent;
+}
+
+
+

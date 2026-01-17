@@ -9,10 +9,17 @@ import Loader from "./loader";
 import { useSession } from "next-auth/react";
 import { toast } from "sonner"
 import { BiGitBranch } from "react-icons/bi";
+import { buildFileTree } from "../utils/buildFileTree";
+import { FileTree } from "./file-tree"
+import { fetchFileContent } from "../utils/fetchFileContent";
+import { CodeViewer } from "./code-viewer";
+import { getLanguage } from "../utils/getLanguage";
+
 
 
 import { create } from "domain";
 import { log } from "console";
+import CodeSkeleton from "./code-skeleton";
 
 interface FileItem {
   path: string;
@@ -40,7 +47,7 @@ interface AnalysisResponse {
   createdAt: string;
 }
 
-const imageExtensions = [".png", ".jpg", ".jpeg", ".gif", ".svg", ".webp", ".bmp"];
+const imageExtensions = [".png", ".jpg", ".jpeg", ".gif", ".svg", ".webp", ".bmp", ".ico", ".tiff", ".csv", ".xls", ".xlsx", ".ppt", ".pptx", ".pdf"];
 
 
 export const FileExplorer = ({
@@ -57,7 +64,14 @@ export const FileExplorer = ({
   const [lastReviewedFile, setLastReviewedFile] = useState<string | null>(null);
   const [branches, setBranches] = useState<string[]>([]);
   const [fileLoading, setFileLoading] = useState(false);
-  const [selectedBranch, setSelectedBranch] = useState("main");
+  const [selectedBranch, setSelectedBranch] = useState<string>("");
+  const [selectedPath, setSelectedPath] = useState<string | null>(null);
+  const [selectedContent, setSelectedContent] = useState<string>("");
+  const [isFileLoading, setIsFileLoading] = useState(false);
+  const [branchFiles, setBranchFiles] = useState<FileItem[]>([]);
+
+
+
 
   const [fileList, setFileList] = useState<string[]>([]);
   console.log("files in FileExplorer:", fileList);
@@ -82,8 +96,11 @@ export const FileExplorer = ({
     if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
     return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
   };
+  const fileTree = buildFileTree(
+    branchFiles.map(f => f.path)
+  );
 
-  const displayFiles = files.filter((f) => f.type === "blob");
+
 
   const getFileContent = async (path: string): Promise<void> => {
     if (!repoName) return;
@@ -197,6 +214,63 @@ export const FileExplorer = ({
       console.error("Failed to fetch branches", err);
     }
   };
+
+  const fetchBranchTree = async () => {
+    if (!session?.provider || !session?.accessToken) return;
+
+    let url = "";
+    const headers: Record<string, string> = {
+      Authorization: `Bearer ${session.accessToken}`,
+    };
+
+    if (session.provider === "github") {
+      url = `https://api.github.com/repos/${owner}/${repoName}/git/trees/${selectedBranch}?recursive=1`;
+      headers.Accept = "application/vnd.github+json";
+    }
+
+    if (session.provider === "bitbucket") {
+      const encodedBranch = encodeURIComponent(selectedBranch);
+      url = `https://api.bitbucket.org/2.0/repositories/${owner}/${repoName}/src/${encodedBranch}/`;
+
+    }
+
+    console.log("BB:", owner, repoName, selectedBranch);
+
+    const res = await fetch(url, { headers });
+    if (!res.ok) throw new Error(`Tree fetch failed: ${res.status}`);
+
+    const data = await res.json();
+
+    if (session.provider === "github") {
+      setBranchFiles(
+        data.tree
+          .filter((f: any) => f.type === "blob")
+          .map((f: any) => ({
+            path: f.path,
+            type: "blob",
+            sha: f.sha,
+          }))
+      );
+    }
+
+    if (session.provider === "bitbucket") {
+      setBranchFiles(
+        data.values
+          .filter((f: any) => f.type === "commit_file")
+          .map((f: any) => ({
+            path: f.path,       // correct
+            type: "blob",
+            sha: f.path,       // Bitbucket does not expose blob SHA here
+          }))
+      );
+    }
+  };
+
+  useEffect(() => {
+    if (selectedBranch) {
+      fetchBranchTree();
+    }
+  }, [selectedBranch]);
 
 
 
@@ -422,7 +496,7 @@ export const FileExplorer = ({
             <div>
               <h2 className="text-2xl font-bold font-mono mb-1">{repoName}</h2>
               <p className="text-muted-foreground">
-                {displayFiles.length} files found
+                {/* {displayFiles.length} files found */}
               </p>
             </div>
             <div className=" gap-4 flex">
@@ -440,7 +514,7 @@ export const FileExplorer = ({
                   <select
                     value={selectedBranch}
                     onChange={(e) => setSelectedBranch(e.target.value)}
-                    className="border h-9 pl-10 pr-3 rounded-xl px-2 py-1 bg-background"
+                    className="border h-9 pl-10 pr-3 rounded-xl px-2 py-1 bg-background cursor-pointer"
                   >
                     {branches.map((b) => (
                       <option key={b} value={b}>{b}</option>
@@ -453,80 +527,95 @@ export const FileExplorer = ({
               <Button
                 variant="outline"
                 onClick={() => fetchLastReview()}
-                className="border-primary/50 hover:bg-primary hover:text-primary-foreground"
+                className="border-primary/50 hover:bg-primary hover:text-primary-foreground cursor-pointer"
               >
                 Overall Last Review
               </Button>
               <Button
-                className="bg-primary hover:bg-primary/90 text-primary-foreground glow-effect"
+                className="bg-primary hover:bg-primary/90 text-primary-foreground glow-effect cursor-pointer"
                 onClick={() => handleFullReview()}
               >
                 Review Full Project
               </Button>
             </div>
           </div>
+          <div className="grid grid-cols-1 lg:grid-cols-[300px_1fr] h-[600px] gap-4">
 
-          <ScrollArea className="h-[600px] pr-4">
-            {fileLoading && (
-              <Loader />
-            )}
-            {!fileLoading && (
-              <div className="space-y-2">
-                {displayFiles.map((file) => (
-                  <div
-                    key={file.sha}
-                    className="glass-card p-4 rounded-lg hover:border-primary/50 transition-all group"
-                  >
-                    <div className="flex items-center justify-between gap-4">
-                      <div className="flex items-center gap-3 flex-1 min-w-0">
-                        {getFileIcon(file)}
-                        <div className="flex-1 min-w-0">
-                          <p className="font-mono text-sm truncate group-hover:text-primary transition-colors">
-                            {file.path}
-                          </p>
-                          {file.size && (
-                            <p className="text-xs text-muted-foreground mt-1">
-                              {formatFileSize(file.size)}
-                            </p>
-                          )}
-                        </div>
-                      </div>
-                      {/* <Button onClick={ () =>getFileContent(file.path)} >
-                    Load Content
-                  </Button> */}
-                      {!isImageFile(file.path) && (
-                        <div className="gap-4 flex">
-                          {/* Check if the fileList = file.path then only show the View LAst Review BUtton */}
-                          {normalizedFileList.includes(file.path) && (
+            <ScrollArea className="h-[300px] lg:h-[600px] pr-4">
+              {fileLoading && (
+                <Loader />
+              )}
+              {!fileLoading && (
+                <div className="space-y-2">
+                  <FileTree
+                    nodes={fileTree}
+                    selectedPath={selectedPath}
+                    onSelect={async (path) => {
+                      setSelectedPath(path);
+                      setIsFileLoading(true);
 
-                            <Button
-                              variant="outline"
-                              onClick={() => fetchLastReview(file.path)}
-                              className="border-primary/50 hover:bg-primary hover:text-primary-foreground"
-                            >
-                              View Last Review
-                            </Button>
-                          )}
-                          <Button
-                            variant="outline"
-                            onClick={() => handleReviewFile(file.path)}
-                            size="sm"
-                            className="border-primary/50 hover:bg-primary hover:text-primary-foreground shrink-0"
-                          >
-                            <span className="flex items-center gap-1">
-                              Review File
-                              <GoChevronRight className="w-3 h-3" />
-                            </span>
-                          </Button>
-                        </div>
-                      )}
+                      try {
+                        const content = await fetchFileContent(
+                          owner,
+                          repoName,
+                          path,
+                          selectedBranch,
+                          session!.accessToken!,
+                          session!.provider!,
+                        );
+                        setSelectedContent(content);
+                      } finally {
+                        setIsFileLoading(false);
+                      }
+                    }}
 
-                    </div>
+                  />
+
+                </div>
+              )}
+            </ScrollArea>
+
+            <div className="relative flex flex-col h-[300px] lg:h-[600px]">
+              {selectedPath && !isImageFile(selectedPath) && !fileLoading &&
+                !isFileLoading && (
+                  <div className="absolute top-5 right-10 flex gap-2 z-10">
+                    {normalizedFileList.includes(selectedPath) && (
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="cursor-pointer"
+                        onClick={() => fetchLastReview(selectedPath)}
+                      >
+                        View Last Review
+                      </Button>
+                    )}
+
+                    <Button
+                      size="sm"
+                      className="cursor-pointer"
+                      onClick={() => handleReviewFile(selectedPath)}
+                    >
+                      Review File
+                    </Button>
                   </div>
-                ))}
-              </div>
-            )}
-          </ScrollArea>
+                )}
+
+              <ScrollArea className=" h-[600px] flex-1 p-2 font-mono text-sm bg-muted rounded-lg">
+                {isFileLoading || fileLoading ? (
+                  <CodeSkeleton />
+                ) : selectedPath ? (
+                  <CodeViewer
+                    code={selectedContent}
+                    language={getLanguage(selectedPath!)}
+                  />
+                ) : (
+                  <div className="text-muted-foreground">
+                    Select a file to view its content
+                  </div>
+                )}
+              </ScrollArea>
+            </div>
+          </div>
         </div>
       )}
 

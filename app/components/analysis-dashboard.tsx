@@ -140,9 +140,10 @@ export const AnalysisDashboard = ({
           </div>
           <Button
             variant="ghost"
+            
             size="icon"
             onClick={onClose}
-            className="rounded-full"
+            className="rounded-full cursor-pointer"
             aria-label="Close analysis"
           >
             ×
