@@ -55,6 +55,7 @@ export default function NavBar() {
                   >
                     {item.name}
                   </a>
+                  
                 ))}
               </div>
             </div>
@@ -95,6 +96,14 @@ export default function NavBar() {
                       className="block px-4 py-2 text-sm text-gray-300 data-focus:bg-white/5 data-focus:outline-hidden"
                     >
                       {session.user?.name}
+                    </a>
+                  </MenuItem>
+                  <MenuItem>
+                    <a
+                      href="#"
+                      className="block px-4 py-2 text-sm text-gray-300 data-focus:bg-white/5 data-focus:outline-hidden"
+                    >
+                      {session.user?.email}
                     </a>
                   </MenuItem>
                   <MenuItem>

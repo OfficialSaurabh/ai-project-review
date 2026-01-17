@@ -45,7 +45,7 @@ function hero() {
           <button
             type="button"
             onClick={() => signIn("github")}
-            className="inline-flex items-center justify-center gap-2 rounded-md border px-5 py-2.5 text-sm font-medium bg-foreground text-background hover:opacity-90 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-primary"
+            className="inline-flex items-center cursor-pointer justify-center gap-2 rounded-md border px-5 py-2.5 text-sm font-medium bg-foreground text-background hover:opacity-90 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-primary"
           >
             <FiGithub className="h-4 w-4" />
             Continue with GitHub
@@ -54,7 +54,7 @@ function hero() {
           <button
             type="button"
             onClick={() => signIn("bitbucket")}
-            className="inline-flex items-center justify-center gap-2 rounded-md border px-5 py-2.5 text-sm font-medium bg-[#2684FF] text-white hover:brightness-110 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-[#2684FF]"
+            className="inline-flex items-center cursor-pointer justify-center gap-2 rounded-md border px-5 py-2.5 text-sm font-medium bg-[#2684FF] text-white hover:brightness-110 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-[#2684FF]"
           >
             <FaBitbucket className="h-4 w-4" />
             Continue with Bitbucket

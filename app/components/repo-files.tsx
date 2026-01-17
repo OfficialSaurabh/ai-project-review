@@ -47,7 +47,7 @@ interface AnalysisResponse {
   createdAt: string;
 }
 
-const imageExtensions = [".png", ".jpg", ".jpeg", ".gif", ".svg", ".webp", ".bmp", ".ico"];
+const imageExtensions = [".png", ".jpg", ".jpeg", ".gif", ".svg", ".webp", ".bmp", ".ico", ".tiff", ".csv", ".xls", ".xlsx", ".ppt", ".pptx", ".pdf"];
 
 
 export const FileExplorer = ({
@@ -514,7 +514,7 @@ export const FileExplorer = ({
                   <select
                     value={selectedBranch}
                     onChange={(e) => setSelectedBranch(e.target.value)}
-                    className="border h-9 pl-10 pr-3 rounded-xl px-2 py-1 bg-background"
+                    className="border h-9 pl-10 pr-3 rounded-xl px-2 py-1 bg-background cursor-pointer"
                   >
                     {branches.map((b) => (
                       <option key={b} value={b}>{b}</option>
@@ -527,12 +527,12 @@ export const FileExplorer = ({
               <Button
                 variant="outline"
                 onClick={() => fetchLastReview()}
-                className="border-primary/50 hover:bg-primary hover:text-primary-foreground"
+                className="border-primary/50 hover:bg-primary hover:text-primary-foreground cursor-pointer"
               >
                 Overall Last Review
               </Button>
               <Button
-                className="bg-primary hover:bg-primary/90 text-primary-foreground glow-effect"
+                className="bg-primary hover:bg-primary/90 text-primary-foreground glow-effect cursor-pointer"
                 onClick={() => handleFullReview()}
               >
                 Review Full Project
@@ -577,26 +577,29 @@ export const FileExplorer = ({
 
             <div className="relative flex flex-col h-full">
 
-              {selectedPath && !isImageFile(selectedPath) && (
-                <div className="absolute top-5 right-10 flex gap-2 z-10">
-                  {normalizedFileList.includes(selectedPath) && (
+              {selectedPath && !isImageFile(selectedPath) && !fileLoading &&
+                !isFileLoading && (
+                  <div className="absolute top-5 right-10 flex gap-2 z-10">
+                    {normalizedFileList.includes(selectedPath) && (
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="cursor-pointer"
+                        onClick={() => fetchLastReview(selectedPath)}
+                      >
+                        View Last Review
+                      </Button>
+                    )}
+
                     <Button
                       size="sm"
-                      variant="outline"
-                      onClick={() => fetchLastReview(selectedPath)}
+                      className="cursor-pointer"
+                      onClick={() => handleReviewFile(selectedPath)}
                     >
-                      View Last Review
+                      Review File
                     </Button>
-                  )}
-
-                  <Button
-                    size="sm"
-                    onClick={() => handleReviewFile(selectedPath)}
-                  >
-                    Review File
-                  </Button>
-                </div>
-              )}
+                  </div>
+                )}
 
               <ScrollArea className=" h-[600px] flex-1 p-2 font-mono text-sm bg-muted rounded-lg">
                 {isFileLoading || fileLoading ? (

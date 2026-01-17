@@ -194,7 +194,7 @@ export default function RepoFilesPage() {
             <button
               type="button"
               onClick={() => router.back()}
-              className="text-sm glass-card p-6 hover:border-primary/50 transition-all group border glass-card rounded px-3 py-1"
+              className="text-sm glass-card p-6 cursor-pointer hover:border-primary/50 transition-all group border glass-card rounded px-3 py-1"
             >
               ← Back to repositories
             </button>
