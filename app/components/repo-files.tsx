@@ -542,7 +542,8 @@ export const FileExplorer = ({
                 <span className="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 
                    whitespace-nowrap rounded bg-black px-2 py-1 text-xs text-white 
                    opacity-0 group-hover:opacity-100 transition-opacity text-wrap pointer-events-none">
-                  Large repositories may exceed system limits. For optimal results, review smaller project or file.
+                  Large repositories may exceed the free plan limits.<br />
+                  For optimal results, review smaller project or file.
                 </span>
               </div>
 
