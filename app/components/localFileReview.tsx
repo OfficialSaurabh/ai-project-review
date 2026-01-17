@@ -185,12 +185,12 @@ export default function LocalFileReview({ setReviewLocalFile }: LocalFileReviewP
     }
   };
   async function handleReview() {
+    setLoading(true);
     if (!files.length || !localProjectId || !owner) {
       setError("Missing files or project context");
       return;
     }
 
-    setLoading(true);
     setError(null);
 
     try {
@@ -230,6 +230,8 @@ export default function LocalFileReview({ setReviewLocalFile }: LocalFileReviewP
       setReviewData(null);
       setIsReviewOpen(false);
       setShowFile(true);
+      setLoading(false);
+
     } finally {
       setLoading(false);
     }
@@ -284,7 +286,9 @@ export default function LocalFileReview({ setReviewLocalFile }: LocalFileReviewP
 
   return (
     <div className="space-y-6 animate-in fade-in duration-500">
+      <h2 className="text-xl font-semibold">Review Result</h2>
       {/* EMPTY / DROP ZONE */}
+      {loading && <Loader />}
       {showFile && !loading && !files.length && (
         <div
           {...getRootProps()}
@@ -375,12 +379,10 @@ export default function LocalFileReview({ setReviewLocalFile }: LocalFileReviewP
       {/* RESULT */}
       {reviewData && (
         <div className="space-y-4">
-          <h2 className="text-xl font-semibold">Review Result</h2>
 
           {/* <pre className="bg-gray-100 p-4 rounded text-sm overflow-auto">
             {JSON.stringify(result, null, 2)}
           </pre> */}
-          {loading && <Loader />}
           {isReviewOpen && reviewData && (
             <AnalysisDashboard
               response={reviewData}

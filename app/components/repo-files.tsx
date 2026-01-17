@@ -539,9 +539,9 @@ export const FileExplorer = ({
               </Button>
             </div>
           </div>
-          <div className="grid grid-cols-[300px_1fr] h-[600px] gap-4">
+          <div className="grid grid-cols-1 lg:grid-cols-[300px_1fr] h-[600px] gap-4">
 
-            <ScrollArea className="h-[600px] pr-4">
+            <ScrollArea className="h-[300px] lg:h-[600px] pr-4">
               {fileLoading && (
                 <Loader />
               )}
@@ -575,8 +575,7 @@ export const FileExplorer = ({
               )}
             </ScrollArea>
 
-            <div className="relative flex flex-col h-full">
-
+            <div className="relative flex flex-col h-[300px] lg:h-[600px]">
               {selectedPath && !isImageFile(selectedPath) && !fileLoading &&
                 !isFileLoading && (
                   <div className="absolute top-5 right-10 flex gap-2 z-10">
