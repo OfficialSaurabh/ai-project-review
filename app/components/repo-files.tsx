@@ -6,6 +6,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { useEffect, useState } from "react";
 import { AnalysisDashboard } from "./analysis-dashboard";
 import Loader from "./loader";
+import {FileTreeSkeleton} from "./file-tree-skelton"
 import { useSession } from "next-auth/react";
 import { toast } from "sonner"
 import { BiGitBranch } from "react-icons/bi";
@@ -563,7 +564,7 @@ export const FileExplorer = ({
 
             <ScrollArea className="h-[300px] lg:h-[600px] pr-4">
               {fileLoading && (
-                <Loader />
+                <FileTreeSkeleton />
               )}
               {!fileLoading && (
                 <div className="space-y-2">
