@@ -6,6 +6,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { useEffect, useState } from "react";
 import { AnalysisDashboard } from "./analysis-dashboard";
 import Loader from "./loader";
+import {FileTreeSkeleton} from "./file-tree-skelton"
 import { useSession } from "next-auth/react";
 import { toast } from "sonner"
 import { BiGitBranch } from "react-icons/bi";
@@ -394,6 +395,7 @@ export const FileExplorer = ({
 
 
   const fetchFiles = async () => {
+    setFileList([]);
     setFileLoading(true);
     if (!session?.provider) {
       toast.error("Provider missing from session");
@@ -483,7 +485,16 @@ export const FileExplorer = ({
   useEffect(() => {
     fetchFiles();
   }, [owner, repoName, selectedBranch]);
-
+  useEffect(() => {
+    // Branch changed → wipe all file-level state
+    setSelectedPath(null);
+    setSelectedContent("");
+    setSelectedFileContent("");
+    setLastReviewedFile(null);
+    setReviewData(null);
+    setIsReviewOpen(false);
+    setShowFile(true);
+  }, [selectedBranch]);
   return (
     <div className="space-y-6 animate-in fade-in duration-500">
       {isReviewLoading && (
@@ -553,7 +564,7 @@ export const FileExplorer = ({
 
             <ScrollArea className="h-[300px] lg:h-[600px] pr-4">
               {fileLoading && (
-                <Loader />
+                <FileTreeSkeleton />
               )}
               {!fileLoading && (
                 <div className="space-y-2">
