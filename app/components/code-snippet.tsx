@@ -16,6 +16,7 @@ import "prismjs/components/prism-tsx";
 interface CodeSnippetProps {
   code: string;
   language: string;
+  startLine: number;
 }
 
 export const CodeSnippet = ({ code, language }: CodeSnippetProps) => {
