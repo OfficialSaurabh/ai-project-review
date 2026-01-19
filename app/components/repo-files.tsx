@@ -145,6 +145,9 @@ export const FileExplorer = ({
       },
       topIssues: data.topIssues ?? [],
       createdAt: data.createdAt ?? new Date().toISOString(),
+      file: {
+        language: data.file?.language ?? "plaintext", // REQUIRED
+      },
     };
   };
   const normalizeLastReviewResponse = (data: any, owner: string, repo: string) => {

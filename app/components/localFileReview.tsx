@@ -17,12 +17,18 @@ type AnalysisResponse = {
     readability: number;
   };
   topIssues: {
-    line: number | null;
-    type: string;
+    startLine: number;
+    endLine: number;
     severity: "critical" | "major" | "minor";
+    type: string;
     message: string;
+    codeSnippet: string;
   }[];
+  file: {
+    language: string;
+  };
 };
+
 
 
 type LocalFile = {
@@ -76,11 +82,21 @@ export default function LocalFileReview({ setReviewLocalFile }: LocalFileReviewP
         documentationScore: data.file?.metrics?.documentationScore ?? 0,
         readability: data.file?.metrics?.readability ?? 0,
       },
-      topIssues: data.topIssues ?? [],
+      topIssues: (data.topIssues ?? []).map((i: any) => ({
+        startLine: i.line ?? 1,
+        endLine: i.line ?? 1,
+        severity: i.severity,
+        type: i.type,
+        message: i.message,
+        codeSnippet: i.codeSnippet ?? "",
+      })),
+      file: {
+        language: data.language ?? "plaintext",
+      },
     };
   };
 
-  const normalizeLastReviewResponse = (data: any) => {
+  const normalizeLastReviewResponse = (data: any): AnalysisResponse => {
     if (!data?.exists) throw new Error("No stored review exists");
 
     return {
@@ -92,12 +108,20 @@ export default function LocalFileReview({ setReviewLocalFile }: LocalFileReviewP
         documentationScore: data.metrics?.documentationScore ?? 0,
         readability: data.metrics?.readability ?? 0,
       },
-      topIssues: data.issues ?? [],
+      topIssues: (data.issues ?? []).map((i: any) => ({
+        startLine: i.startLine ?? i.line ?? 1,
+        endLine: i.endLine ?? i.line ?? 1,
+        severity: i.severity,
+        type: i.type,
+        message: i.message,
+        codeSnippet: i.codeSnippet ?? "",
+      })),
       file: {
-        language: data.language,   // <-- ADD
+        language: data.language ?? "plaintext",
       },
     };
   };
+
 
 
 
