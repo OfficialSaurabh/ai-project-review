@@ -2,13 +2,19 @@ import { FiAlertTriangle, FiCheckCircle } from "react-icons/fi";
 import { IoMdInformationCircleOutline } from "react-icons/io";
 import { GoXCircle } from "react-icons/go";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@headlessui/react";
+import jumpToLine from "../utils/jumpToLine";
+import { CodeSnippet } from "./code-snippet";
 
 interface InsightCardProps {
   category: string;
   type: "success" | "warning" | "error" | "info";
   title: string;
   description: string;
-  suggestions: string[];
+  startLine: number;
+  endLine: number;
+  codeSnippet: string;
+  language: string;
 }
 
 export const InsightCard = ({
@@ -16,7 +22,10 @@ export const InsightCard = ({
   type,
   title,
   description,
-  suggestions,
+  startLine,
+  endLine,
+  codeSnippet,
+  language
 }: InsightCardProps) => {
   const getIcon = () => {
     switch (type) {
@@ -54,26 +63,29 @@ export const InsightCard = ({
               {category}
             </Badge>
           </div>
+
           <h4 className="font-semibold mb-2">{title}</h4>
-          <p className="text-sm text-muted-foreground mb-4">{description}</p>
-          {suggestions.length > 0 && (
-            <div className="space-y-2">
-              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-                Suggestions
-              </p>
-              <ul className="space-y-1">
-                {suggestions.map((suggestion, index) => (
-                  <li
-                    key={index}
-                    className="text-sm text-muted-foreground flex items-start gap-2"
-                  >
-                    <span className="text-primary mt-1">→</span>
-                    <span>{suggestion}</span>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          )}
+
+          <p className="text-sm text-muted-foreground mb-2">
+            {description}
+          </p>
+
+          <div className="bg-muted rounded-md w-full">
+            <CodeSnippet code={codeSnippet} language={language} startLine={startLine} />
+          </div>
+
+
+          <Button
+            className="text-sm cursor-pointer hover:underline bg-transparent p-0"
+
+            onClick={() => {
+              document.querySelector("pre.line-numbers")?.scrollIntoView();
+              setTimeout(() => jumpToLine(startLine, endLine), 200);
+            }}
+
+          >
+            View in Code (lines {startLine}-{endLine})
+          </Button>
         </div>
       </div>
     </div>

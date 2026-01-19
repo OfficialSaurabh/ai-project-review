@@ -6,7 +6,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { useEffect, useState } from "react";
 import { AnalysisDashboard } from "./analysis-dashboard";
 import Loader from "./loader";
-import {FileTreeSkeleton} from "./file-tree-skelton"
+import { FileTreeSkeleton } from "./file-tree-skelton"
 import { useSession } from "next-auth/react";
 import { toast } from "sonner"
 import { BiGitBranch } from "react-icons/bi";
@@ -15,6 +15,8 @@ import { FileTree } from "./file-tree"
 import { fetchFileContent } from "../utils/fetchFileContent";
 import { CodeViewer } from "./code-viewer";
 import { getLanguage } from "../utils/getLanguage";
+import { useRef } from "react";
+
 
 
 
@@ -46,6 +48,9 @@ interface AnalysisResponse {
   };
   topIssues: any[];
   createdAt: string;
+  file: {
+    language: string;
+  };
 }
 
 const imageExtensions = [".png", ".jpg", ".jpeg", ".gif", ".svg", ".webp", ".bmp", ".ico", ".tiff", ".csv", ".xls", ".xlsx", ".ppt", ".pptx", ".pdf"];
@@ -70,6 +75,7 @@ export const FileExplorer = ({
   const [selectedContent, setSelectedContent] = useState<string>("");
   const [isFileLoading, setIsFileLoading] = useState(false);
   const [branchFiles, setBranchFiles] = useState<FileItem[]>([]);
+  const analysisRef = useRef<HTMLDivElement | null>(null);
 
 
 
@@ -139,6 +145,9 @@ export const FileExplorer = ({
       },
       topIssues: data.topIssues ?? [],
       createdAt: data.createdAt ?? new Date().toISOString(),
+      file: {
+        language: data.file?.language ?? "plaintext", // REQUIRED
+      },
     };
   };
   const normalizeLastReviewResponse = (data: any, owner: string, repo: string) => {
@@ -156,6 +165,9 @@ export const FileExplorer = ({
         readability: data.metrics?.readability ?? 0,
       },
       topIssues: data.issues ?? [],
+      file: {
+        language: data.language,   // <-- ADD
+      },
     };
   };
 
@@ -323,13 +335,13 @@ export const FileExplorer = ({
       setReviewData(mappedResponse);
       setLastReviewedFile(filename)
       setIsReviewOpen(true);
-      setShowFile(false);
+      // setShowFile(false);
     } catch (err) {
       console.error("Error reviewing file:", err);
       toast.error("AI review service failed");
       setReviewData(null);
       setIsReviewOpen(false);
-      setShowFile(true);
+      // setShowFile(true);
     }
   };
 
@@ -381,13 +393,13 @@ export const FileExplorer = ({
 
       setReviewData(mappedResponse);
       setIsReviewOpen(true);
-      setShowFile(false);
+      // setShowFile(false);
     } catch (err) {
       console.error("Failed to load last review:", err);
       toast.info("No previous review found.");
       setReviewData(null);
       setIsReviewOpen(false);
-      setShowFile(true);
+      // setShowFile(true);
     } finally {
       setIsReviewLoading(false);
     }
@@ -495,6 +507,17 @@ export const FileExplorer = ({
     setIsReviewOpen(false);
     setShowFile(true);
   }, [selectedBranch]);
+
+  useEffect(() => {
+    if (analysisRef.current) {
+      analysisRef.current.scrollIntoView({
+        behavior: "smooth",
+        block: "start",
+      });
+    }
+  }, [isReviewLoading, isReviewOpen]);
+
+
   return (
     <div className="space-y-6 animate-in fade-in duration-500">
       {isReviewLoading && (
@@ -641,8 +664,15 @@ export const FileExplorer = ({
       )}
 
       {!isReviewLoading && isReviewOpen && reviewData && (
-        <AnalysisDashboard response={reviewData} onClose={handleCloseReview} fetchFiles={fetchFiles} />
+        <div ref={analysisRef}>
+          <AnalysisDashboard
+            response={reviewData}
+            onClose={handleCloseReview}
+            fetchFiles={fetchFiles}
+          />
+        </div>
       )}
+
     </div>
   );
 };

@@ -161,11 +161,29 @@ code[class*="language-"] {
   background: transparent !important;
 }
 
+pre[class*="language-"] code {
+  white-space: break-spaces !important;
+  word-break: break-word;
+  overflow-wrap: anywhere;
+}
+
+
 /* Remove the vertical divider between line numbers and code */
 .line-numbers .line-numbers-rows {
   border-right: none !important;
   background: transparent;
 }
 
+.highlight-line {
+  position: absolute;
+  left: 0;
+  right: 0;
+  background: rgba(255, 235, 59, 0.35);
+  pointer-events: none;
+  z-index: 10;           /* THIS was the problem */
+}
+pre.line-numbers {
+  position: relative;
+}
 
 

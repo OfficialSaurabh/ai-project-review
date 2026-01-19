@@ -23,11 +23,12 @@ export const CodeViewer = ({ code, language }: Props) => {
   }, [code]);
 
   return (
-
-    <pre className=" line-numbers text-sm h-[570px] w-[900px] rounded-lg overflow-auto">
+    <pre className="line-numbers text-sm h-[570px] w-[900px] rounded-lg overflow-auto">
       <code className={`language-${language}`}>{code}</code>
     </pre>
   );
 };
+
+
 
 export default CodeViewer;
