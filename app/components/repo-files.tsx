@@ -6,7 +6,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { useEffect, useState } from "react";
 import { AnalysisDashboard } from "./analysis-dashboard";
 import Loader from "./loader";
-import {FileTreeSkeleton} from "./file-tree-skelton"
+import { FileTreeSkeleton } from "./file-tree-skelton"
 import { useSession } from "next-auth/react";
 import { toast } from "sonner"
 import { BiGitBranch } from "react-icons/bi";
@@ -156,6 +156,9 @@ export const FileExplorer = ({
         readability: data.metrics?.readability ?? 0,
       },
       topIssues: data.issues ?? [],
+      file: {
+        language: data.language,   // <-- ADD
+      },
     };
   };
 
@@ -323,13 +326,13 @@ export const FileExplorer = ({
       setReviewData(mappedResponse);
       setLastReviewedFile(filename)
       setIsReviewOpen(true);
-      setShowFile(false);
+      // setShowFile(false);
     } catch (err) {
       console.error("Error reviewing file:", err);
       toast.error("AI review service failed");
       setReviewData(null);
       setIsReviewOpen(false);
-      setShowFile(true);
+      // setShowFile(true);
     }
   };
 
@@ -381,13 +384,13 @@ export const FileExplorer = ({
 
       setReviewData(mappedResponse);
       setIsReviewOpen(true);
-      setShowFile(false);
+      // setShowFile(false);
     } catch (err) {
       console.error("Failed to load last review:", err);
       toast.info("No previous review found.");
       setReviewData(null);
       setIsReviewOpen(false);
-      setShowFile(true);
+      // setShowFile(true);
     } finally {
       setIsReviewLoading(false);
     }

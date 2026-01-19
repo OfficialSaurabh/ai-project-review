@@ -93,6 +93,9 @@ export default function LocalFileReview({ setReviewLocalFile }: LocalFileReviewP
         readability: data.metrics?.readability ?? 0,
       },
       topIssues: data.issues ?? [],
+      file: {
+        language: data.language,   // <-- ADD
+      },
     };
   };
 

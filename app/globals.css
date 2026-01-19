@@ -167,5 +167,16 @@ code[class*="language-"] {
   background: transparent;
 }
 
+.highlight-line {
+  position: absolute;
+  left: 0;
+  right: 0;
+  background: rgba(255, 235, 59, 0.35);
+  pointer-events: none;
+  z-index: 10;           /* THIS was the problem */
+}
+pre.line-numbers {
+  position: relative;
+}
 
 
