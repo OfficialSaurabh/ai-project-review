@@ -70,7 +70,7 @@ export const InsightCard = ({
             {description}
           </p>
 
-          <div className="bg-muted rounded-md">
+          <div className="bg-muted rounded-md w-full">
             <CodeSnippet code={codeSnippet} language={language} startLine={startLine} />
           </div>
 

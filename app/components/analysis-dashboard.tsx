@@ -110,7 +110,7 @@ export const AnalysisDashboard = ({
       title: `Lines ${issue.startLine}-${issue.endLine} – ${issue.type}`,
       description: issue.message,
       codeSnippet: issue.codeSnippet,
-      language: response.file.language || getLanguage(response.project),
+      language: response.file?.language || getLanguage(response.project),
       startLine: issue.startLine,
       endLine: issue.endLine,
     }));

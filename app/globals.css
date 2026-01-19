@@ -161,6 +161,13 @@ code[class*="language-"] {
   background: transparent !important;
 }
 
+pre[class*="language-"] code {
+  white-space: break-spaces !important;
+  word-break: break-word;
+  overflow-wrap: anywhere;
+}
+
+
 /* Remove the vertical divider between line numbers and code */
 .line-numbers .line-numbers-rows {
   border-right: none !important;

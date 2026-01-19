@@ -10,30 +10,26 @@ import "prismjs/components/prism-json";
 import "prismjs/components/prism-css";
 import "prismjs/components/prism-markup";
 import "prismjs/components/prism-jsx";   // <-- ADD
-import "prismjs/components/prism-tsx"; 
+import "prismjs/components/prism-tsx";
 
 
 interface CodeSnippetProps {
   code: string;
   language: string;
-  startLine: number;
 }
 
-export const CodeSnippet = ({ code, language, startLine }: CodeSnippetProps) => {
+export const CodeSnippet = ({ code, language }: CodeSnippetProps) => {
   const ref = useRef<HTMLElement>(null);
 
   useEffect(() => {
     if (ref.current) {
       Prism.highlightElement(ref.current);
     }
-  }, [code, language]);
+  }, [code]);
 
   return (
-    <pre
-      className="line-numbers text-sm rounded-lg overflow-auto"
-      data-start={startLine}   // <-- THIS IS THE KEY
-    >
-      <code ref={ref} className={`language-${language}`}>
+    <pre className="line-numbers w-full max-h-[200px] overflow-y-auto whitespace-break-spaces text-sm rounded-lg p-2">
+      <code ref={ref} className={`language-${language} block w-full whitespace-break-spaces break-words`}>
         {code}
       </code>
     </pre>
