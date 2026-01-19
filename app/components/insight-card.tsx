@@ -70,14 +70,17 @@ export const InsightCard = ({
             {description}
           </p>
 
-          <CodeSnippet code={codeSnippet} language={language} startLine={startLine} />
+          <div className="bg-muted rounded-md">
+            <CodeSnippet code={codeSnippet} language={language} startLine={startLine} />
+          </div>
+
 
           <Button
-            className="text-sm cursor-pointer"
+            className="text-sm cursor-pointer hover:underline bg-transparent p-0"
 
             onClick={() => {
               document.querySelector("pre.line-numbers")?.scrollIntoView();
-              setTimeout(() => jumpToLine(startLine), 200);
+              setTimeout(() => jumpToLine(startLine, endLine), 200);
             }}
 
           >

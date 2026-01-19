@@ -15,6 +15,8 @@ import { FileTree } from "./file-tree"
 import { fetchFileContent } from "../utils/fetchFileContent";
 import { CodeViewer } from "./code-viewer";
 import { getLanguage } from "../utils/getLanguage";
+import { useRef } from "react";
+
 
 
 
@@ -46,6 +48,9 @@ interface AnalysisResponse {
   };
   topIssues: any[];
   createdAt: string;
+  file: {
+    language: string;
+  };
 }
 
 const imageExtensions = [".png", ".jpg", ".jpeg", ".gif", ".svg", ".webp", ".bmp", ".ico", ".tiff", ".csv", ".xls", ".xlsx", ".ppt", ".pptx", ".pdf"];
@@ -70,6 +75,7 @@ export const FileExplorer = ({
   const [selectedContent, setSelectedContent] = useState<string>("");
   const [isFileLoading, setIsFileLoading] = useState(false);
   const [branchFiles, setBranchFiles] = useState<FileItem[]>([]);
+  const analysisRef = useRef<HTMLDivElement | null>(null);
 
 
 
@@ -498,6 +504,17 @@ export const FileExplorer = ({
     setIsReviewOpen(false);
     setShowFile(true);
   }, [selectedBranch]);
+
+  useEffect(() => {
+    if (analysisRef.current) {
+      analysisRef.current.scrollIntoView({
+        behavior: "smooth",
+        block: "start",
+      });
+    }
+  }, [isReviewLoading, isReviewOpen]);
+
+
   return (
     <div className="space-y-6 animate-in fade-in duration-500">
       {isReviewLoading && (
@@ -644,8 +661,15 @@ export const FileExplorer = ({
       )}
 
       {!isReviewLoading && isReviewOpen && reviewData && (
-        <AnalysisDashboard response={reviewData} onClose={handleCloseReview} fetchFiles={fetchFiles} />
+        <div ref={analysisRef}>
+          <AnalysisDashboard
+            response={reviewData}
+            onClose={handleCloseReview}
+            fetchFiles={fetchFiles}
+          />
+        </div>
       )}
+
     </div>
   );
 };

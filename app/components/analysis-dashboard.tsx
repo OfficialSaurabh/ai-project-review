@@ -31,11 +31,12 @@ interface AnalysisDashboardProps {
     topIssues?: TopIssue[];
     file: {
       language: string;
-    }; // <-- you ARE using this
+    };
   };
   onClose: () => void;
   fetchFiles: () => Promise<void>;
 }
+
 
 type AnalysisResponse = {
   project: string;
