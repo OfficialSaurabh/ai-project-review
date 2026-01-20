@@ -29,7 +29,7 @@ export const CodeSnippet = ({ code, language, startLine }: CodeSnippetProps) => 
   }, [code]);
 
   return (
-    <pre className="line-numbers w-full max-h-[200px] overflow-y-auto whitespace-break-spaces text-sm rounded-lg p-2" data-start={startLine}>
+    <pre className="code-snippet  line-numbers w-full max-h-[200px] overflow-y-auto whitespace-break-spaces text-sm rounded-lg p-2" data-start={startLine}>
       <code ref={ref} className={`language-${language} block w-full whitespace-break-spaces break-words`}>
         {code}
       </code>

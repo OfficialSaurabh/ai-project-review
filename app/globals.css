@@ -161,7 +161,7 @@ code[class*="language-"] {
   background: transparent !important;
 }
 
-pre[class*="language-"] code {
+.code-snippet code {
   white-space: break-spaces !important;
   word-break: break-word;
   overflow-wrap: anywhere;
@@ -178,7 +178,7 @@ pre[class*="language-"] code {
   position: absolute;
   left: 0;
   right: 0;
-  background: rgba(255, 235, 59, 0.35);
+  background: rgba(255, 235, 59, 0.25);
   pointer-events: none;
   z-index: 10;           /* THIS was the problem */
 }
