@@ -533,7 +533,7 @@ export const FileExplorer = ({
                 {/* {displayFiles.length} files found */}
               </p>
             </div>
-            <div className=" gap-4 flex">
+            <div className=" flex flex-col justify-end gap-3 sm:flex-row sm:items-center sm:gap-4 w-full">
               {/* <Button
               variant="outline"
               onClick={fetchLastReview}
@@ -541,45 +541,46 @@ export const FileExplorer = ({
             >
               View Last Review
             </Button> */}
-              <div className="relative">
+              <div className="relative w-full sm:w-auto justify-content-end ">
                 <BiGitBranch className="absolute left-3 top-1/2 -translate-y-1/2 text-primary pointer-events-none" />
 
                 {selectedBranch && (
                   <select
                     value={selectedBranch}
                     onChange={(e) => setSelectedBranch(e.target.value)}
-                    className="border h-9 pl-10 pr-3 rounded-xl px-2 py-1 bg-background cursor-pointer"
+                    className="border h-9 pl-10 pr-3 rounded-xl px-2 py-1 bg-background cursor-pointer w-full sm:w-auto"
                   >
                     {branches.map((b) => (
                       <option key={b} value={b}>{b}</option>
                     ))}
                   </select>
                 )}
-
               </div>
 
               <Button
                 variant="outline"
                 onClick={() => fetchLastReview()}
-                className="border-primary/50 hover:bg-primary hover:text-primary-foreground cursor-pointer"
+                className="border-primary/50 hover:bg-primary hover:text-primary-foreground cursor-pointer w-full sm:w-auto"
               >
                 Overall Last Review
               </Button>
-              <div className="relative group">
+
+              <div className="relative group w-full sm:w-auto">
                 <Button
-                  className="bg-primary hover:bg-primary/90 text-primary-foreground glow-effect cursor-pointer"
+                  className="bg-primary hover:bg-primary/90 text-primary-foreground glow-effect cursor-pointer w-full sm:w-auto"
                   onClick={handleFullReview}
                 >
                   Review Full Project
                 </Button>
 
                 <span className="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 
-                   whitespace-nowrap rounded bg-black px-2 py-1 text-xs text-white 
-                   opacity-0 group-hover:opacity-100 transition-opacity text-wrap pointer-events-none">
+     whitespace-nowrap rounded bg-black px-2 py-1 text-xs text-white 
+     opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
                   Large repositories may exceed the free plan limits.<br />
                   For optimal results, review smaller project or file.
                 </span>
               </div>
+
 
             </div>
           </div>

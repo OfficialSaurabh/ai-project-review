@@ -19,7 +19,7 @@ interface CodeSnippetProps {
   startLine: number;
 }
 
-export const CodeSnippet = ({ code, language }: CodeSnippetProps) => {
+export const CodeSnippet = ({ code, language, startLine }: CodeSnippetProps) => {
   const ref = useRef<HTMLElement>(null);
 
   useEffect(() => {
@@ -29,7 +29,7 @@ export const CodeSnippet = ({ code, language }: CodeSnippetProps) => {
   }, [code]);
 
   return (
-    <pre className="line-numbers w-full max-h-[200px] overflow-y-auto whitespace-break-spaces text-sm rounded-lg p-2">
+    <pre className="line-numbers w-full max-h-[200px] overflow-y-auto whitespace-break-spaces text-sm rounded-lg p-2" data-start={startLine}>
       <code ref={ref} className={`language-${language} block w-full whitespace-break-spaces break-words`}>
         {code}
       </code>
