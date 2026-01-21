@@ -168,7 +168,7 @@ export const AnalysisDashboard = ({
           />
           <HealthScore
             score={response.metrics.testCoverageEstimate}
-            label="Code Coverage"
+            label="Coverage Estimate"
           />
           <HealthScore
             score={response.metrics.documentationScore}
