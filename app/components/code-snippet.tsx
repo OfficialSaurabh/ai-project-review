@@ -11,6 +11,8 @@ import "prismjs/components/prism-css";
 import "prismjs/components/prism-markup";
 import "prismjs/components/prism-jsx";   // <-- ADD
 import "prismjs/components/prism-tsx";
+import "prismjs/components/prism-diff";
+
 
 
 interface CodeSnippetProps {

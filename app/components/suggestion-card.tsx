@@ -46,7 +46,7 @@ export const SuggestionCard = ({ suggestions, language }: SuggestionCardProps) =
                 <div className="mt-2">
                   <CodeSnippet
                     code={s.diff_example}
-                    language={language}
+                    language="diff"
                     startLine={0}
                   />
                 </div>

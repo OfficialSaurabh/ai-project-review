@@ -77,7 +77,8 @@ export const FileExplorer = ({
   const [isFileLoading, setIsFileLoading] = useState(false);
   const [branchFiles, setBranchFiles] = useState<FileItem[]>([]);
   const analysisRef = useRef<HTMLDivElement | null>(null);
-
+  const allowedEmails =
+    process.env.NEXT_PUBLIC_FULL_REVIEW_ALLOWED_EMAILS?.split(",").map(e => e.trim()) || [];
 
 
 
@@ -580,20 +581,41 @@ export const FileExplorer = ({
               </Button>
 
               <div className="relative group w-full sm:w-auto">
-                <Button
-                  className="bg-primary hover:bg-primary/90 text-primary-foreground glow-effect cursor-pointer w-full sm:w-auto"
-                  onClick={handleFullReview}
-                >
-                  Review Full Project
-                </Button>
+                {(() => {
+                  const isAllowed = !!session?.user?.email && allowedEmails.includes(session.user.email);
+                  return (
+                    <>
+                      <Button
+                        disabled={!isAllowed}
+                        className="bg-primary hover:bg-primary/90 text-primary-foreground glow-effect w-full sm:w-auto
+                     disabled:opacity-50 disabled:cursor-not-allowed"
+                        onClick={handleFullReview}
+                      >
+                        Review Full Project
+                      </Button>
 
-                <span className="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 
-     whitespace-nowrap rounded bg-black px-2 py-1 text-xs text-white 
-     opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
-                  Large repositories may exceed the free plan limits.<br />
-                  For optimal results, review smaller project or file.
-                </span>
+                      <span
+                        className="absolute bottom-full mb-2 left-1/2 -translate-x-1/2
+                     whitespace-nowrap rounded  px-2 py-1 text-foreground text-xs bg-background/90 backdrop-blur border border-border
+                     opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none"
+                      >
+                        {isAllowed ? (
+                          <>
+                            Large repositories may exceed the free plan limits.<br />
+                            For optimal results, review smaller projects or files.
+                          </>
+                        ) : (
+                          <>
+                            Full project review is restricted to the owner account.<br />
+                            Contact admin to request access.
+                          </>
+                        )}
+                      </span>
+                    </>
+                  );
+                })()}
               </div>
+
 
 
             </div>
