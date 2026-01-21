@@ -24,6 +24,7 @@ import { create } from "domain";
 import { log } from "console";
 import CodeSkeleton from "./code-skeleton";
 
+
 interface FileItem {
   path: string;
   type: "blob" | "tree";
@@ -132,24 +133,34 @@ export const FileExplorer = ({
 
   const webhookUrl = process.env.NEXT_PUBLIC_REVIEW_WEBHOOK;
   const normalizeReviewResponse = (data: any) => {
+    const issues = (data.file?.issues || data.topIssues || []).map((issue: any, idx: number) => ({
+      ...issue,
+      suggestions: (data.file?.suggestions || data.suggestions || [])
+        .filter((s: any) => s.issueIndex === idx)
+        .map((s: any) => ({
+          title: s.title,
+          explanation: s.explanation,
+          diff_example: s.diff_example,
+          codeSnippet: s.codeSnippet,
+        }))
+    }));
+
     return {
       project: data.project,
-      overallFileScore:
-        data.file?.overallFileScore ??
-        data.overallProjectScore ??
-        0,
+      overallFileScore: data.file?.overallFileScore ?? data.overallProjectScore ?? 0,
       metrics: {
         testCoverageEstimate: data.file?.metrics?.testCoverageEstimate ?? 0,
         documentationScore: data.file?.metrics?.documentationScore ?? 0,
         readability: data.file?.metrics?.readability ?? 0,
       },
-      topIssues: data.topIssues ?? [],
+      topIssues: issues,
       createdAt: data.createdAt ?? new Date().toISOString(),
       file: {
-        language: data.file?.language ?? "plaintext", // REQUIRED
+        language: data.file?.language ?? "plaintext",
       },
     };
   };
+
   const normalizeLastReviewResponse = (data: any, owner: string, repo: string) => {
     if (!data?.exists) {
       throw new Error("No stored review exists");
@@ -164,7 +175,10 @@ export const FileExplorer = ({
         documentationScore: data.metrics?.documentationScore ?? 0,
         readability: data.metrics?.readability ?? 0,
       },
-      topIssues: data.issues ?? [],
+      topIssues: (data.issues || []).map((i: any) => ({
+        ...i,
+        suggestions: i.suggestions || []
+      })),
       file: {
         language: data.language,   // <-- ADD
       },

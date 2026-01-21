@@ -20,6 +20,11 @@ interface TopIssue {
   type: string;
   message: string;
   codeSnippet: string;
+  suggestions?: {
+    title: string;
+    explanation: string;
+    diff_example?: string;
+  }[];
 }
 
 interface AnalysisDashboardProps {
@@ -89,7 +94,7 @@ export const AnalysisDashboard = ({
 }: AnalysisDashboardProps) => {
   const [isAnalyzing, setIsAnalyzing] = useState(false);
 
-  console.log("AnalysisDashboard response:", response.createdAt);
+  console.log("AnalysisDashboard response:", response);
   const formatDate = (date: string | Date) => {
     const d = new Date(date);
 
@@ -113,6 +118,7 @@ export const AnalysisDashboard = ({
       language: response.file?.language || getLanguage(response.project),
       startLine: issue.startLine,
       endLine: issue.endLine,
+      suggestions: issue.suggestions ?? []
     }));
 
 
@@ -219,6 +225,7 @@ export const AnalysisDashboard = ({
                 endLine={insight.endLine}
                 codeSnippet={insight.codeSnippet}
                 language={insight.language}
+                suggestions={insight.suggestions}
 
               />
 
@@ -245,6 +252,7 @@ export const AnalysisDashboard = ({
                 endLine={insight.endLine}
                 codeSnippet={insight.codeSnippet}
                 language={insight.language}
+                suggestions={insight.suggestions}
               />
 
             ))
@@ -270,6 +278,7 @@ export const AnalysisDashboard = ({
                 endLine={insight.endLine}
                 codeSnippet={insight.codeSnippet}
                 language={insight.language}
+                suggestions={insight.suggestions}
               />
 
             ))
