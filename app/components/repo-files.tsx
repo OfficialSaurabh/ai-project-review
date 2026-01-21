@@ -24,6 +24,7 @@ import { create } from "domain";
 import { log } from "console";
 import CodeSkeleton from "./code-skeleton";
 
+
 interface FileItem {
   path: string;
   type: "blob" | "tree";
@@ -76,7 +77,8 @@ export const FileExplorer = ({
   const [isFileLoading, setIsFileLoading] = useState(false);
   const [branchFiles, setBranchFiles] = useState<FileItem[]>([]);
   const analysisRef = useRef<HTMLDivElement | null>(null);
-
+  const allowedEmails =
+    process.env.NEXT_PUBLIC_FULL_REVIEW_ALLOWED_EMAILS?.split(",").map(e => e.trim()) || [];
 
 
 
@@ -132,24 +134,34 @@ export const FileExplorer = ({
 
   const webhookUrl = process.env.NEXT_PUBLIC_REVIEW_WEBHOOK;
   const normalizeReviewResponse = (data: any) => {
+    const issues = (data.file?.issues || data.topIssues || []).map((issue: any, idx: number) => ({
+      ...issue,
+      suggestions: (data.file?.suggestions || data.suggestions || [])
+        .filter((s: any) => s.issueIndex === idx)
+        .map((s: any) => ({
+          title: s.title,
+          explanation: s.explanation,
+          diff_example: s.diff_example,
+          codeSnippet: s.codeSnippet,
+        }))
+    }));
+
     return {
       project: data.project,
-      overallFileScore:
-        data.file?.overallFileScore ??
-        data.overallProjectScore ??
-        0,
+      overallFileScore: data.file?.overallFileScore ?? data.overallProjectScore ?? 0,
       metrics: {
         testCoverageEstimate: data.file?.metrics?.testCoverageEstimate ?? 0,
         documentationScore: data.file?.metrics?.documentationScore ?? 0,
         readability: data.file?.metrics?.readability ?? 0,
       },
-      topIssues: data.topIssues ?? [],
+      topIssues: issues,
       createdAt: data.createdAt ?? new Date().toISOString(),
       file: {
-        language: data.file?.language ?? "plaintext", // REQUIRED
+        language: data.file?.language ?? "plaintext",
       },
     };
   };
+
   const normalizeLastReviewResponse = (data: any, owner: string, repo: string) => {
     if (!data?.exists) {
       throw new Error("No stored review exists");
@@ -164,7 +176,10 @@ export const FileExplorer = ({
         documentationScore: data.metrics?.documentationScore ?? 0,
         readability: data.metrics?.readability ?? 0,
       },
-      topIssues: data.issues ?? [],
+      topIssues: (data.issues || []).map((i: any) => ({
+        ...i,
+        suggestions: i.suggestions || []
+      })),
       file: {
         language: data.language,   // <-- ADD
       },
@@ -566,20 +581,41 @@ export const FileExplorer = ({
               </Button>
 
               <div className="relative group w-full sm:w-auto">
-                <Button
-                  className="bg-primary hover:bg-primary/90 text-primary-foreground glow-effect cursor-pointer w-full sm:w-auto"
-                  onClick={handleFullReview}
-                >
-                  Review Full Project
-                </Button>
+                {(() => {
+                  const isAllowed = !!session?.user?.email && allowedEmails.includes(session.user.email);
+                  return (
+                    <>
+                      <Button
+                        disabled={!isAllowed}
+                        className="bg-primary hover:bg-primary/90 text-primary-foreground glow-effect w-full sm:w-auto
+                     disabled:opacity-50 disabled:cursor-not-allowed"
+                        onClick={handleFullReview}
+                      >
+                        Review Full Project
+                      </Button>
 
-                <span className="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 
-     whitespace-nowrap rounded bg-black px-2 py-1 text-xs text-white 
-     opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
-                  Large repositories may exceed the free plan limits.<br />
-                  For optimal results, review smaller project or file.
-                </span>
+                      <span
+                        className="absolute bottom-full mb-2 left-1/2 -translate-x-1/2
+                     whitespace-nowrap rounded  px-2 py-1 text-foreground text-xs bg-background/90 backdrop-blur border border-border
+                     opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none"
+                      >
+                        {isAllowed ? (
+                          <>
+                            Large repositories may exceed the free plan limits.<br />
+                            For optimal results, review smaller projects or files.
+                          </>
+                        ) : (
+                          <>
+                            Full project review is restricted to the owner account.<br />
+                            Contact admin to request access.
+                          </>
+                        )}
+                      </span>
+                    </>
+                  );
+                })()}
               </div>
+
 
 
             </div>
