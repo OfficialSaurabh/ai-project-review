@@ -37,7 +37,7 @@ export const SuggestionCard = ({ suggestions, language }: SuggestionCardProps) =
         <div className="border-t pt-3 space-y-3">
           {suggestions.map((s, i) => (
             <div key={i} className="rounded-md bg-background/60 p-3 border">
-              <p className="font-medium text-sm">{s.title}</p>
+              <p className="font-medium text-foreground text-sm">{s.title}</p>
               <p className="text-sm text-muted-foreground mt-1">
                 {s.explanation}
               </p>

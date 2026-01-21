@@ -77,15 +77,15 @@ export const InsightCard = ({
           </div>
 
           <div className="flex items-center justify-between space-y-2">
-            <h4 className="font-semibold">{title}</h4>
+            <h4 className="font-semibold text-foreground">{title}</h4>
             <Button
-              className="text-sm cursor-pointer hover:underline bg-transparent p-0"
+              className="text-sm text-muted-foreground cursor-pointer hover:underline hover:text-primary bg-transparent p-0"
               onClick={() => {
                 document.querySelector("pre.line-numbers")?.scrollIntoView();
                 setTimeout(() => jumpToLine(startLine, endLine), 200);
               }}
             >
-              View in Code (lines {startLine}-{endLine})
+              View in Code →
             </Button>
           </div>
 
