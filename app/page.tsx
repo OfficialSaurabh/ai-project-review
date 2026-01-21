@@ -116,7 +116,7 @@ export default function Home() {
               AI Project Analyzer
             </h1>
             <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-              Analyze code quality, structure, and documentation with detailed insights and actionable suggestions
+              AI-powered code review and architecture analysis with actionable insights for production-ready software.
             </p>
           </div>
           {session ? (
