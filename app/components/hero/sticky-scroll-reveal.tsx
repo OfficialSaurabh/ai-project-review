@@ -65,7 +65,7 @@ export default function StickyScrollReveal() {
                 ref={containerRef}
                 className="relative h-[600vh] w-full"
             >
-                <div className="sticky top-16 h-screen w-full flex flex-col items-center justify-center overflow-hidden">
+                <div className="sticky top-20 h-screen w-full flex flex-col items-center justify-center overflow-hidden">
 
                     {/* Background Gradient */}
                     <motion.div
@@ -103,7 +103,7 @@ export default function StickyScrollReveal() {
                             style={{ opacity: text1Opacity }}
                             className="absolute text-left"
                         >
-                            <h2 className="text-3xl pt-2 md:text-5xl font-bold bg-clip-text text-transparent bg-gradient-to-b from-white to-white/50 drop-shadow-lg">
+                            <h2 className="text-3xl md:text-5xl font-bold bg-clip-text text-transparent bg-gradient-to-b from-white to-white/50 drop-shadow-lg">
                                 Detailed Analysis
                             </h2>
                             <p className="text-sm text-muted-foreground tracking-wide">
@@ -116,7 +116,7 @@ export default function StickyScrollReveal() {
                             style={{ opacity: text2Opacity }}
                             className="absolute text-left"
                         >
-                            <h2 className="text-3xl pt-2 md:text-5xl font-bold bg-clip-text text-transparent bg-gradient-to-b from-white to-white/50 drop-shadow-lg">
+                            <h2 className="text-3xl md:text-5xl font-bold bg-clip-text text-transparent bg-gradient-to-b from-white to-white/50 drop-shadow-lg">
                                 AI Reviewing Result
                             </h2>
                             <p className="text-sm text-muted-foreground tracking-wide">
@@ -129,7 +129,7 @@ export default function StickyScrollReveal() {
                             style={{ opacity: text3Opacity }}
                             className="absolute text-left"
                         >
-                            <h2 className="text-3xl pt-2 md:text-5xl font-bold bg-clip-text text-transparent bg-gradient-to-b from-white to-white/50 drop-shadow-lg">
+                            <h2 className="text-3xl  md:text-5xl font-bold bg-clip-text text-transparent bg-gradient-to-b from-white to-white/50 drop-shadow-lg">
                                 Actionable Feedback
                             </h2>
                             <p className="text-sm text-muted-foreground tracking-wide">
