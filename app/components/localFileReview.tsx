@@ -57,7 +57,7 @@ interface LocalFileReviewProps {
 
 export default function LocalFileReview({ setReviewLocalFile }: LocalFileReviewProps) {
   const { data: session } = useSession();
-  const owner = session?.user?.email;
+  const owner = session?.user?.email || "guest";
   console.log("useParams in LocalFileReview:", owner);
   const [files, setFiles] = useState<LocalFile[]>([]);
   const [loading, setLoading] = useState(false);

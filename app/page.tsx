@@ -8,6 +8,8 @@ import Hero from "./components/hero";
 import LocalFileReview from "./components/localFileReview";
 import { Button } from "@headlessui/react";
 import { toast } from "sonner"
+import CaseStudies from "./components/case-studies";
+import SampleOutputs from "./components/sample-outputs";
 
 
 interface Repo {
@@ -35,6 +37,7 @@ export default function Home() {
   const [reposLoading, setReposLoading] = useState(false);
   const [reviewLocalFile, setReviewLocalFile] = useState(false);
   const [search, setSearch] = useState("");
+  const [isGuest, setIsGuest] = useState(false);
 
 
   useEffect(() => {
@@ -119,7 +122,7 @@ export default function Home() {
               Analyze code quality, structure, and documentation with detailed insights and actionable suggestions
             </p>
           </div>
-          {session ? (
+          {session || isGuest ? (
             <>
               <div className=" flex justify-end ">
                 <button
@@ -135,24 +138,32 @@ export default function Home() {
 
                 <LocalFileReview setReviewLocalFile={setReviewLocalFile} />
               )}
-              <div className="mb-4 max-w-md">
-                <input
-                  type="text"
-                  placeholder="Find a repository…"
-                  value={search}
-                  onChange={(e) => setSearch(e.target.value)}
-                  className="w-full px-3 py-2 border rounded-lg bg-background"
-                />
-              </div>
+              {session && (
+                <>
+                  <div className="mb-4 max-w-md">
+                    <input
+                      type="text"
+                      placeholder="Find a repository…"
+                      value={search}
+                      onChange={(e) => setSearch(e.target.value)}
+                      className="w-full px-3 py-2 border rounded-lg bg-background"
+                    />
+                  </div>
 
-              <RepoList
-                repos={filteredRepos}
-                reposLoading={reposLoading}
-              />
+                  <RepoList
+                    repos={filteredRepos}
+                    reposLoading={reposLoading}
+                  />
+                </>
+              )}
 
             </>
           ) : (
-            <Hero />
+            <div className="space-y-20">
+              <Hero onGuestLogin={() => setIsGuest(true)} />
+              <CaseStudies />
+              <SampleOutputs />
+            </div>
           )}
         </div>
       </div>

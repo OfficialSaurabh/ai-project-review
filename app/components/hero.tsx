@@ -4,7 +4,11 @@ import { FaBitbucket } from "react-icons/fa6";
 import { useSession, signIn, signOut } from "next-auth/react"
 
 
-function hero() {
+interface HeroProps {
+  onGuestLogin: () => void;
+}
+
+function Hero({ onGuestLogin }: HeroProps) {
   // const { data: session } = useSession()
 
   return (
@@ -58,6 +62,14 @@ function hero() {
           >
             <FaBitbucket className="h-4 w-4" />
             Continue with Bitbucket
+          </button>
+
+          <button
+            type="button"
+            onClick={onGuestLogin}
+            className="inline-flex items-center cursor-pointer justify-center gap-2 rounded-md border px-5 py-2.5 text-sm font-medium bg-muted/50 text-foreground hover:bg-muted transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-muted"
+          >
+            Continue as Guest
           </button>
 
           <p className="text-xs text-muted-foreground">
@@ -143,4 +155,4 @@ function hero() {
   )
 }
 
-export default hero
+export default Hero
