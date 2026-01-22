@@ -188,13 +188,13 @@ pre.line-numbers {
 
 /* Added lines */
 .token.inserted {
-  /* background: rgba(34, 197, 94, 0.15); soft green */
+  background: rgba(34, 197, 94, 0.15); /* soft green */
   color: #22c55e;
 }
 
 /* Removed lines */
 .token.deleted {
-  /* background: rgba(239, 68, 68, 0.15); soft red */
+   background: rgba(239, 68, 68, 0.15); 
   color: #ef4444;
 }
 
