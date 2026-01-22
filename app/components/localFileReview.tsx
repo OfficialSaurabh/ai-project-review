@@ -57,7 +57,7 @@ interface LocalFileReviewProps {
 
 export default function LocalFileReview({ setReviewLocalFile }: LocalFileReviewProps) {
   const { data: session } = useSession();
-  const owner = session?.user?.email;
+  const owner = session?.user?.email || "guest";
   console.log("useParams in LocalFileReview:", owner);
   const [files, setFiles] = useState<LocalFile[]>([]);
   const [loading, setLoading] = useState(false);
@@ -70,6 +70,23 @@ export default function LocalFileReview({ setReviewLocalFile }: LocalFileReviewP
   console.log("files in FileExplorer:", fileList);
 
   const normalizeLocalReviewResponse = (data: any): AnalysisResponse => {
+    const issues = (data.file?.issues || data.topIssues || []).map((issue: any, idx: number) => ({
+      startLine: issue.line ?? 1,
+      endLine: issue.line ?? 1,
+      severity: issue.severity,
+      type: issue.type,
+      message: issue.message,
+      codeSnippet: issue.codeSnippet ?? "",
+      suggestions: (data.file?.suggestions || data.suggestions || [])
+        .filter((s: any) => s.issueIndex === idx)
+        .map((s: any) => ({
+          title: s.title,
+          explanation: s.explanation,
+          diff_example: s.diff_example,
+          codeSnippet: s.codeSnippet,
+        })),
+    }));
+
     return {
       project: "Local Files",
       createdAt: new Date().toISOString(),
@@ -82,19 +99,13 @@ export default function LocalFileReview({ setReviewLocalFile }: LocalFileReviewP
         documentationScore: data.file?.metrics?.documentationScore ?? 0,
         readability: data.file?.metrics?.readability ?? 0,
       },
-      topIssues: (data.topIssues ?? []).map((i: any) => ({
-        startLine: i.line ?? 1,
-        endLine: i.line ?? 1,
-        severity: i.severity,
-        type: i.type,
-        message: i.message,
-        codeSnippet: i.codeSnippet ?? "",
-      })),
+      topIssues: issues,
       file: {
-        language: data.language ?? "plaintext",
+        language: data.language ?? data.file?.language ?? "plaintext",
       },
     };
   };
+
 
   const normalizeLastReviewResponse = (data: any): AnalysisResponse => {
     if (!data?.exists) throw new Error("No stored review exists");
