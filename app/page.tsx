@@ -9,7 +9,8 @@ import LocalFileReview from "./components/localFileReview";
 import { Button } from "@headlessui/react";
 import { toast } from "sonner"
 import CaseStudies from "./components/case-studies";
-import SampleOutputs from "./components/sample-outputs";
+// import SampleOutputs from "./components/sample-outputs";
+import StickyScrollReveal from "./components/sticky-scroll-reveal";
 
 
 interface Repo {
@@ -162,7 +163,8 @@ export default function Home() {
             <div className="space-y-20">
               <Hero onGuestLogin={() => setIsGuest(true)} />
               <CaseStudies />
-              <SampleOutputs />
+              {/* <SampleOutputs /> */}
+              <StickyScrollReveal />
             </div>
           )}
         </div>
