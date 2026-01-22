@@ -8,6 +8,9 @@
   * {
     @apply border-border;
   }
+   html {
+    scroll-behavior: smooth;
+  }
 
   /* 2. Body styles: mix @apply + real CSS instead of arbitrary @apply */
   body {
@@ -161,7 +164,7 @@ code[class*="language-"] {
   background: transparent !important;
 }
 
-pre[class*="language-"] code {
+.code-snippet code {
   white-space: break-spaces !important;
   word-break: break-word;
   overflow-wrap: anywhere;
@@ -178,7 +181,7 @@ pre[class*="language-"] code {
   position: absolute;
   left: 0;
   right: 0;
-  background: rgba(255, 235, 59, 0.35);
+  background: rgba(255, 235, 59, 0.25);
   pointer-events: none;
   z-index: 10;           /* THIS was the problem */
 }
@@ -186,4 +189,20 @@ pre.line-numbers {
   position: relative;
 }
 
+/* Added lines */
+.token.inserted {
+  background: rgba(34, 197, 94, 0.15); /* soft green */
+  color: #22c55e;
+}
+
+/* Removed lines */
+.token.deleted {
+   background: rgba(239, 68, 68, 0.15); 
+  color: #ef4444;
+}
+
+/* Diff headers */
+.token.diff {
+  color: #38bdf8; /* cyan for @@, index, --- +++ */
+}
 

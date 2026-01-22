@@ -26,11 +26,35 @@ export const HealthScore = ({ score, label }: HealthScoreProps) => {
     return "from-destructive/20 to-destructive/5";
   };
 
+  const tooltipMap: Record<string, string> = {
+    "Overall Health":
+      "Composite quality score (0–100) derived from code readability, testability, and documentation. Represents overall maintainability, change risk, and long-term support cost.",
+
+    "Coverage Estimate":
+      "AI-based estimate of how thoroughly critical execution paths are likely exercised by automated tests. Factors include test presence, isolation, dependency controllability, and error-path validation.",
+
+    "Documentation":
+      "Assesses completeness and accuracy of docstrings, comments, and public API contracts, including explanation of intent, assumptions, and edge-case behavior.",
+
+    "Readability":
+      "Evaluates cognitive load required to understand and safely modify the code, based on naming semantics, structural clarity, and control-flow complexity."
+
+  };
+
+
   return (
     <div className={`glass-card p-6 rounded-xl bg-gradient-to-br ${getBgColor()}`}>
-      <div className="flex items-center justify-between mb-4">
+      <div className="flex items-center justify-between mb-4 ">
         <span className="text-sm text-muted-foreground">{label}</span>
-        <div className={getColor()}>{getIcon()}</div>
+        <div className="group cursor-pointer">
+          <div className={getColor()}>{getIcon()}</div>
+          <div className="pointer-events-none absolute right-0 top-7 z-50 w-64 rounded-md
+                  bg-background/90 backdrop-blur border border-border
+                  text-foreground text-xs px-3 py-2 opacity-0
+                  group-hover:opacity-100 transition-opacity duration-200 shadow-lg">
+            {tooltipMap[label] || "Score information"}
+          </div>
+        </div>
       </div>
       <div className="flex items-end gap-2">
         <span className={`text-4xl font-bold ${getColor()}`}>{score}</span>
