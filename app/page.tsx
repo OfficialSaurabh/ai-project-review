@@ -4,10 +4,11 @@ import { useSession } from "next-auth/react";
 import { useEffect, useState } from "react";
 import NavBar from "./components/nav-bar";
 import RepoList from "./components/repo-list";
-import Hero from "./components/hero";
+import Hero from "./components/hero/hero";
 import LocalFileReview from "./components/localFileReview";
 import { Button } from "@headlessui/react";
 import { toast } from "sonner"
+import Footer from "./components/hero/footer";
 
 
 interface Repo {
@@ -109,7 +110,7 @@ export default function Home() {
   return (
     <>
       <NavBar />
-      <div className="min-h-screen p-6 md:p-8">
+      <div className="min-h-screen mt-15 p-6 md:p-8">
         <div className="max-w-7xl mx-auto space-y-8">
           <div className="text-center mb-12 animate-in fade-in slide-in-from-top duration-700">
             <h1 className="text-5xl md:text-6xl font-bold mb-4 bg-gradient-to-r from-primary via-foreground to-primary bg-clip-text text-transparent">
@@ -156,6 +157,7 @@ export default function Home() {
           )}
         </div>
       </div>
+      <Footer />
     </>
   );
 }

@@ -8,6 +8,9 @@
   * {
     @apply border-border;
   }
+   html {
+    scroll-behavior: smooth;
+  }
 
   /* 2. Body styles: mix @apply + real CSS instead of arbitrary @apply */
   body {
