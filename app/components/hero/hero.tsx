@@ -6,6 +6,8 @@ import HowItWorks from "./how-it-work";
 import Features from './feature';
 import Cta from './cta';
 import Transparency from './transparency';
+import { Stick } from 'next/font/google';
+import StickyScrollReveal from './sticky-scroll-reveal';
 
 
 function Hero() {
@@ -17,61 +19,8 @@ function Hero() {
       <div className="grid gap-10 md:grid-cols-[minmax(0,1.2fr)_minmax(0,1fr)] items-center animate-in fade-in slide-in-from-bottom duration-700">
         {/* Left: copy + CTA */}
         <div className="space-y-6">
-          {/* <div className="inline-flex items-center rounded-full border px-3 py-1 text-xs font-medium text-muted-foreground gap-2">
-          <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
-          Connect GitHub to start analyzing your repos
-        </div>
-
-        <h2 className="text-3xl md:text-4xl font-semibold tracking-tight">
-          Sign in to unlock repo analysis
-        </h2>
-
-        <p className="text-sm md:text-base text-muted-foreground max-w-xl">
-          Securely connect your GitHub or Bitbucket account and we&apos;ll automatically pull your repositories, run AI analysis on
-          structure, readability, and documentation, and surface the highest-impact improvements.
-        </p>
-
-        <ul className="space-y-3 text-sm text-muted-foreground">
-          <li className="flex gap-3">
-            <span className="mt-1 h-1.5 w-1.5 rounded-full bg-primary" />
-            <span>Rank repos by potential risk, complexity, or tech debt.</span>
-          </li>
-          <li className="flex gap-3">
-            <span className="mt-1 h-1.5 w-1.5 rounded-full bg-primary" />
-            <span>Get file-level suggestions on clarity, structure, and naming.</span>
-          </li>
-          <li className="flex gap-3">
-            <span className="mt-1 h-1.5 w-1.5 rounded-full bg-primary" />
-            <span>Spot missing docs, weak tests, and inconsistent patterns fast.</span>
-          </li>
-        </ul>
-
-        <div className="flex flex-wrap items-center gap-4">
-          <button
-            type="button"
-            onClick={() => signIn("github")}
-            className="inline-flex items-center cursor-pointer justify-center gap-2 rounded-md border px-5 py-2.5 text-sm font-medium bg-foreground text-background hover:opacity-90 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-primary"
-          >
-            <FiGithub className="h-4 w-4" />
-            Continue with GitHub
-          </button>
-
-          <button
-            type="button"
-            onClick={() => signIn("bitbucket")}
-            className="inline-flex items-center cursor-pointer justify-center gap-2 rounded-md border px-5 py-2.5 text-sm font-medium bg-[#2684FF] text-white hover:brightness-110 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-[#2684FF]"
-          >
-            <FaBitbucket className="h-4 w-4" />
-            Continue with Bitbucket
-          </button>
-
-          <p className="text-xs text-muted-foreground">
-            Read-only access. We only use your repos for analysis.
-          </p>
-        </div> */}
           <div className="inline-flex items-center rounded-full border px-3 py-1 text-xs font-medium text-muted-foreground gap-2">
             <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
-
             Powered by Google Gemini 2.5
           </div>
           <h2 className="text-3xl md:text-4xl font-semibold tracking-tight">
@@ -122,9 +71,7 @@ function Hero() {
           </div>
 
           <div className="mt-2 text-xs text-muted-foreground leading-relaxed max-w-xl">
-            <strong>Security:</strong> Read-only access. No code is modified. <br />
-            <strong>Privacy:</strong> Repositories are analyzed on demand and not shared with third parties. <br />
-            <strong>Data Handling:</strong> Analysis results are stored only to show review history inside this application.
+            <strong>Read-only access. No code is modified.</strong>
           </div>
 
         </div>
@@ -208,8 +155,9 @@ function Hero() {
       </div>
       <Features />
       <HowItWorks />
+      <StickyScrollReveal />
       <Transparency />
-      <Cta />
+      {/* <Cta /> */}
     </>
   )
 }
