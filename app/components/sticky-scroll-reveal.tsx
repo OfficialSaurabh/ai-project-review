@@ -65,7 +65,7 @@ export default function StickyScrollReveal() {
                 ref={containerRef}
                 className="relative h-[600vh] w-full"
             >
-                <div className="sticky top-0 h-screen w-full flex flex-col items-center justify-center overflow-hidden">
+                <div className="sticky top-16 h-[calc(100vh-4rem)] w-full flex flex-col items-center justify-center overflow-hidden">
 
                     {/* Background Gradient */}
                     <motion.div
@@ -74,7 +74,7 @@ export default function StickyScrollReveal() {
                     />
 
                     {/* Main Visual */}
-                    <div className="relative z-10 w-full max-w-6xl aspect-video flex items-center justify-center p-4">
+                    <div className="relative z-10 w-full max-w-4xl aspect-video flex items-center justify-center p-4">
                         {isLoading ? (
                             <div className="flex flex-col items-center gap-4">
                                 <div className="w-12 h-12 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
@@ -96,15 +96,15 @@ export default function StickyScrollReveal() {
                     </div>
 
                     {/* Overlays */}
-                    
-                    <div className="absolute inset-0 z-20 pointer-events-none">
+
+                    <div className="absolute inset-0 z-20 pointer-events-none mx-12">
                         {/* Text 1 */}
                         <motion.div
                             style={{ opacity: text1Opacity }}
                             className="absolute text-center"
                         >
                             <h2 className="text-5xl md:text-7xl font-bold bg-clip-text text-transparent bg-gradient-to-b from-white to-white/50 drop-shadow-lg">
-                                Detailed Analysis 
+                                Detailed Analysis
                             </h2>
                             <p className="text-xl md:text-2xl text-blue-200 mt-4 font-light tracking-wide">
                                 Every line of code, scrutinized.
