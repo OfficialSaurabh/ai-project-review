@@ -10,7 +10,7 @@ import { Button } from "@headlessui/react";
 import { toast } from "sonner"
 import CaseStudies from "./components/case-studies";
 // import SampleOutputs from "./components/sample-outputs";
-import StickyScrollReveal from "./components/sticky-scroll-reveal";
+import StickyScrollReveal from "./components/hero/sticky-scroll-reveal";
 import Footer from "./components/hero/footer";
 
 
@@ -162,10 +162,7 @@ export default function Home() {
             </>
           ) : (
             <div className="space-y-20">
-              <Hero onGuestLogin={() => setIsGuest(true)} />
-              <CaseStudies />
-              {/* <SampleOutputs /> */}
-              <StickyScrollReveal />
+              <Hero />
             </div>
           )}
         </div>

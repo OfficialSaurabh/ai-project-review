@@ -42,7 +42,7 @@ const features = [
 
 const Features = () => {
   return (
-    <section id="features" className="relative py-16">
+    <section id="features" className="relative border-t border-border py-20">
       <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,hsl(var(--primary)/0.05)_0%,transparent_70%)]" />
 
       <div className="container relative mx-auto px-6">
@@ -51,7 +51,7 @@ const Features = () => {
             What gets analyzed
           </h2>
           <p className="text-lg text-muted-foreground">
-            Comprehensive semantic analysis powered by LLM reasoning—not pattern matching.
+            Comprehensive semantic analysis powered by LLM reasoning
           </p>
         </div>
 

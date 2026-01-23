@@ -60,7 +60,7 @@ export default function StickyScrollReveal() {
     const bgOpacity = useTransform(scrollYProgress, [0, 0.5, 1], [0.8, 0.95, 1]);
 
     return (
-        <section className="relative bg-background">
+        <section className="relative border-b border-border" id="demo-scroll-reveal">
             <div
                 ref={containerRef}
                 className="relative h-[600vh] w-full"
@@ -69,7 +69,7 @@ export default function StickyScrollReveal() {
 
                     {/* Background Gradient */}
                     <motion.div
-                        className="absolute inset-0 bg-gradient-to-b from-background via-black/50 to-black z-0"
+                        className="absolute "
                         style={{ opacity: bgOpacity }}
                     />
 
@@ -86,7 +86,7 @@ export default function StickyScrollReveal() {
                                     key={currentIndex}
                                     src={images[currentIndex].src}
                                     alt="Scroll Animation"
-                                    className="w-full h-full object-contain drop-shadow-2xl rounded-lg"
+                                    className="w-full h-full object-contain drop-shadow-2xl rounded-xl bg-accent-foreground"
                                     initial={{ opacity: 0.8 }}
                                     animate={{ opacity: 1 }}
                                     transition={{ duration: 0.1 }}
@@ -96,17 +96,17 @@ export default function StickyScrollReveal() {
                     </div>
 
                     {/* Overlays */}
-
-                    <div className="absolute inset-0 z-20 pointer-events-none mx-12">
+                    
+                    <div className="absolute inset-0 z-20 pointer-events-none">
                         {/* Text 1 */}
                         <motion.div
                             style={{ opacity: text1Opacity }}
-                            className="absolute text-center"
+                            className="absolute text-left"
                         >
                             <h2 className="text-5xl md:text-7xl font-bold bg-clip-text text-transparent bg-gradient-to-b from-white to-white/50 drop-shadow-lg">
-                                Detailed Analysis
+                                Detailed Analysis 
                             </h2>
-                            <p className="text-xl md:text-2xl text-blue-200 mt-4 font-light tracking-wide">
+                            <p className="text-sm text-muted-foreground tracking-wide">
                                 Every line of code, scrutinized.
                             </p>
                         </motion.div>
@@ -114,12 +114,12 @@ export default function StickyScrollReveal() {
                         {/* Text 2 */}
                         <motion.div
                             style={{ opacity: text2Opacity }}
-                            className="absolute text-center"
+                            className="absolute text-left"
                         >
-                            <h2 className="text-5xl md:text-7xl font-bold bg-clip-text text-transparent bg-gradient-to-b from-white to-white/50 drop-shadow-lg">
+                            <h2 className="text-3xl md:text-5xl font-bold bg-clip-text text-transparent bg-gradient-to-b from-white to-white/50 drop-shadow-lg">
                                 AI Reviewing Result
                             </h2>
-                            <p className="text-xl md:text-2xl text-purple-200 mt-4 font-light tracking-wide">
+                            <p className="text-sm text-muted-foreground tracking-wide">
                                 AI detects project code issues at a glance
                             </p>
                         </motion.div>
@@ -127,12 +127,12 @@ export default function StickyScrollReveal() {
                         {/* Text 3 */}
                         <motion.div
                             style={{ opacity: text3Opacity }}
-                            className="absolute text-center"
+                            className="absolute text-left"
                         >
-                            <h2 className="text-5xl md:text-7xl font-bold bg-clip-text text-transparent bg-gradient-to-b from-white to-white/50 drop-shadow-lg">
+                            <h2 className="text-3xl  md:text-5xl font-bold bg-clip-text text-transparent bg-gradient-to-b from-white to-white/50 drop-shadow-lg">
                                 Actionable Feedback
                             </h2>
-                            <p className="text-xl md:text-2xl text-emerald-200 mt-4 font-light tracking-wide">
+                            <p className="text-sm text-muted-foreground tracking-wide">
                                 Clear steps to improve code quality.
                             </p>
                         </motion.div>
