@@ -65,7 +65,7 @@ export default function StickyScrollReveal() {
                 ref={containerRef}
                 className="relative h-[600vh] w-full"
             >
-                <div className="sticky top-16 h-[calc(100vh-4rem)] w-full flex flex-col items-center justify-center overflow-hidden">
+                <div className="sticky top-16 h-[calc(100vh-4rem)] w-full flex flex-col items-center justify-center overflow-hidden margin-top: auto">
 
                     {/* Background Gradient */}
                     <motion.div
@@ -96,8 +96,8 @@ export default function StickyScrollReveal() {
                     </div>
 
                     {/* Overlays */}
-                    
-                    <div className="absolute inset-0 z-20 pointer-events-none">
+
+                    <div className="absolute inset-0 z-20 pointer-events-none mx-12">
                         {/* Text 1 */}
                         <motion.div
                             style={{ opacity: text1Opacity }}
