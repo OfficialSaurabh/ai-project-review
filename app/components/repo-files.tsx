@@ -346,6 +346,8 @@ export const FileExplorer = ({
 
     try {
       const mappedResponse = await sendReviewRequest(payload);
+      console.log("Repo File Raw File", mappedResponse);
+      
 
       setReviewData(mappedResponse);
       setLastReviewedFile(filename)

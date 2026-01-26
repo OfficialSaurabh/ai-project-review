@@ -10,7 +10,7 @@ import { Stick } from 'next/font/google';
 import StickyScrollReveal from './sticky-scroll-reveal';
 
 
-function Hero() {
+function Hero({ onGuestReview }: { onGuestReview: () => void }) {
   // const { data: session } = useSession()
 
   return (
@@ -67,6 +67,14 @@ function Hero() {
             >
               <FaBitbucket className="h-4 w-4" />
               Analyze with Bitbucket
+            </button>
+            {/* Guest */}
+            <button
+              type="button"
+              onClick={onGuestReview}
+              className="inline-flex items-center justify-center gap-2 rounded-md border px-5 py-2.5 text-sm font-medium bg-muted hover:bg-muted/80 transition"
+            >
+              Try as Guest (Local File)
             </button>
           </div>
 
@@ -155,7 +163,7 @@ function Hero() {
       </div>
       <Features />
       <HowItWorks />
-      <StickyScrollReveal />
+      {/* <StickyScrollReveal /> */}
       <Transparency />
       {/* <Cta /> */}
     </>

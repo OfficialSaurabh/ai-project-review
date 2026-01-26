@@ -162,7 +162,13 @@ export default function Home() {
             </>
           ) : (
             <div className="space-y-20">
-              <Hero />
+              <Hero
+                onGuestReview={() => {
+                  setIsGuest(true);
+                  setReviewLocalFile(true);
+                }}
+
+              />
             </div>
           )}
         </div>

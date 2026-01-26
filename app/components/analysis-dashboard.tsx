@@ -217,6 +217,7 @@ export const AnalysisDashboard = ({
             grouped.structure.map((insight, index) => (
               <InsightCard
                 key={index}
+                project={response.project}
                 category={insight.category}
                 type={insight.type}
                 title={insight.title}
@@ -244,6 +245,7 @@ export const AnalysisDashboard = ({
             grouped.quality.map((insight, index) => (
               <InsightCard
                 key={index}
+                project={response.project}
                 category={insight.category}
                 type={insight.type}
                 title={insight.title}
@@ -270,6 +272,7 @@ export const AnalysisDashboard = ({
             grouped.docs.map((insight, index) => (
               <InsightCard
                 key={index}
+                project={response.project}
                 category={insight.category}
                 type={insight.type}
                 title={insight.title}
