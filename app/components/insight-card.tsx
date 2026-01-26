@@ -15,6 +15,7 @@ interface Suggestion {
 }
 
 interface InsightCardProps {
+  project: string;
   category: string;
   type: "success" | "warning" | "error" | "info";
   title: string;
@@ -27,6 +28,7 @@ interface InsightCardProps {
 }
 
 export const InsightCard = ({
+  project,
   category,
   type,
   title,
@@ -78,29 +80,32 @@ export const InsightCard = ({
 
           <div className="flex items-center justify-between space-y-2">
             <h4 className="font-semibold text-foreground">{title}</h4>
-            <Button
-              className="text-sm text-muted-foreground cursor-pointer hover:underline hover:text-primary bg-transparent p-0"
-              onClick={() => {
-                document.querySelector("pre.line-numbers")?.scrollIntoView();
-                setTimeout(() => jumpToLine(startLine, endLine), 200);
-              }}
-            >
-              View in Code →
-            </Button>
+            {project !== "Local Files" && (
+              <Button
+                className="text-sm text-muted-foreground cursor-pointer hover:underline hover:text-primary bg-transparent p-0"
+                onClick={() => {
+                  document.querySelector("pre.line-numbers")?.scrollIntoView();
+                  setTimeout(() => jumpToLine(startLine, endLine), 200);
+                }}
+              >
+                View in Code →
+              </Button>
+            )}
           </div>
 
 
           <p className="text-sm text-muted-foreground mb-2">
             {description}
           </p>
-
-          <div className="bg-muted rounded-md w-full mb-2">
-            <CodeSnippet
-              code={codeSnippet}
-              language={language}
-              startLine={startLine}
-            />
-          </div>
+          {codeSnippet && (
+            <div className="bg-muted rounded-md w-full mb-2">
+              <CodeSnippet
+                code={codeSnippet}
+                language={language}
+                startLine={startLine}
+              />
+            </div>
+          )}
 
           <SuggestionCard
             suggestions={suggestions ?? []}

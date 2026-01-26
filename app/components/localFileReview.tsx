@@ -70,22 +70,33 @@ export default function LocalFileReview({ setReviewLocalFile }: LocalFileReviewP
   console.log("files in FileExplorer:", fileList);
 
   const normalizeLocalReviewResponse = (data: any): AnalysisResponse => {
-    const issues = (data.file?.issues || data.topIssues || []).map((issue: any, idx: number) => ({
-      startLine: issue.line ?? 1,
-      endLine: issue.line ?? 1,
-      severity: issue.severity,
-      type: issue.type,
-      message: issue.message,
-      codeSnippet: issue.codeSnippet ?? "",
-      suggestions: (data.file?.suggestions || data.suggestions || [])
-        .filter((s: any) => s.issueIndex === idx)
-        .map((s: any) => ({
+    // const issues = (data.file?.issues || data.topIssues || []).map((issue: any, idx: number) => ({
+    //   ...issue,
+    //   suggestions: (data.file?.suggestions || data.suggestions || [])
+    //     .filter((s: any) => s.issueIndex === idx)
+    //     .map((s: any) => ({
+    //       title: s.title,
+    //       explanation: s.explanation,
+    //       diff_example: s.diff_example,
+    //       codeSnippet: s.codeSnippet,
+    //     })),
+    // }));
+    const issues = (data.file?.issues || data.topIssues || []).map((issue: any, idx: number) => {
+      const relatedSuggestions = (data.file?.suggestions || data.suggestions || [])
+        .filter((s: any) => s.issueIndex === idx);
+
+      return {
+        ...issue,
+        // 🔧 FIX: backfill snippet from suggestion if missing in issue
+        codeSnippet: issue.codeSnippet || relatedSuggestions[0]?.codeSnippet || "",
+        suggestions: relatedSuggestions.map((s: any) => ({
           title: s.title,
           explanation: s.explanation,
           diff_example: s.diff_example,
           codeSnippet: s.codeSnippet,
         })),
-    }));
+      };
+    });
 
     return {
       project: "Local Files",
@@ -255,10 +266,13 @@ export default function LocalFileReview({ setReviewLocalFile }: LocalFileReviewP
 
       const data = await res.json();
 
+      console.log("Local File Raw review response:", data);
+
       // Backend may return array or single object
       const normalized = Array.isArray(data)
         ? normalizeLocalReviewResponse(data[0])
         : normalizeLocalReviewResponse(data);
+
 
       setReviewData(normalized);
       setIsReviewOpen(true);
@@ -338,9 +352,13 @@ export default function LocalFileReview({ setReviewLocalFile }: LocalFileReviewP
             onClick={(e) => {
               e.stopPropagation();
               e.preventDefault();
+              if (!session) {
+                window.location.reload();   // guest → hard reset UI state
+                return;
+              }
               onClose();
             }}
-            className="absolute top-3 right-3 rounded-full"
+            className="absolute top-3 right-3 rounded-full cursor-pointer"
             aria-label="Close analysis"
           >
             ×
