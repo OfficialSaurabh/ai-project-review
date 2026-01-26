@@ -130,7 +130,7 @@ export default function Home() {
                 <button
                   type="button"
                   onClick={() => setReviewLocalFile(true)}
-                  className="text-sm border rounded px-3 py-1 hover:border-accent  transition-colors flex items-center gap-2"
+                  className="text-sm cursor-pointer border rounded px-3 py-1 hover:border-accent  transition-colors flex items-center gap-2"
                 >
                   {/* <FiGithub className="h-4 w-4" /> */}
                   Review Local File
