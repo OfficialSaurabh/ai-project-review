@@ -13,7 +13,7 @@ import { useEffect } from "react";
 const navigation = [
   { name: 'Features', href: '#features', current: true },
   { name: 'How it works', href: '#how-it-works', current: true },
-  { name: 'Demo', href: '#demo-scroll-reveal', current: true },
+  // { name: 'Demo', href: '#demo-scroll-reveal', current: true },
   { name: 'Transparency', href: '#transparency', current: true },
 ]
 
@@ -96,9 +96,9 @@ export default function NavBar() {
               {/* Profile dropdown */}
               {/* <LuLogIn aria-hidden="true" className="size-6" onClick={() => signIn()}  /> */}
 
-              {!session ? (<LuLogIn aria-hidden="true" className="size-6" onClick={() => signIn()} />) : (
+              {!session ? (<LuLogIn aria-hidden="true" className="size-6 cursor-pointer" onClick={() => signIn()} />) : (
                 <Menu as="div" className="relative ml-3">
-                  <MenuButton className="relative flex rounded-full focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-500">
+                  <MenuButton className="relative  flex rounded-full focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-500">
                     <span className="absolute -inset-1.5" />
                     <span className="sr-only">Open user menu</span>
                     <img

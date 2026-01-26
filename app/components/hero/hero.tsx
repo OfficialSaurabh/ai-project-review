@@ -54,7 +54,7 @@ function Hero({ onGuestReview }: { onGuestReview: () => void }) {
             <button
               type="button"
               onClick={() => signIn("github")}
-              className="inline-flex items-center justify-center gap-2 rounded-md border px-5 py-2.5 text-sm font-medium bg-foreground text-background hover:opacity-90 transition"
+              className="inline-flex cursor-pointer items-center justify-center gap-2 rounded-md border px-5 py-2.5 text-sm font-medium bg-foreground text-background hover:opacity-90 transition"
             >
               <FiGithub className="h-4 w-4" />
               Analyze with GitHub
@@ -63,7 +63,7 @@ function Hero({ onGuestReview }: { onGuestReview: () => void }) {
             <button
               type="button"
               onClick={() => signIn("bitbucket")}
-              className="inline-flex items-center justify-center gap-2 rounded-md border px-5 py-2.5 text-sm font-medium bg-[#2684FF] text-white hover:brightness-110 transition"
+              className="inline-flex cursor-pointer items-center justify-center gap-2 rounded-md border px-5 py-2.5 text-sm font-medium bg-[#2684FF] text-white hover:brightness-110 transition"
             >
               <FaBitbucket className="h-4 w-4" />
               Analyze with Bitbucket
@@ -72,7 +72,7 @@ function Hero({ onGuestReview }: { onGuestReview: () => void }) {
             <button
               type="button"
               onClick={onGuestReview}
-              className="inline-flex items-center justify-center gap-2 rounded-md border px-5 py-2.5 text-sm font-medium bg-muted hover:bg-muted/80 transition"
+              className="inline-flex cursor-pointer items-center justify-center gap-2 rounded-md border px-5 py-2.5 text-sm font-medium bg-muted hover:bg-muted/80 transition"
             >
               Try as Guest (Local File)
             </button>
