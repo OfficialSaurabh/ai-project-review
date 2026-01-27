@@ -52,7 +52,7 @@ export default function CaseStudies() {
       <div className="mb-12 text-center">
         <h2 className="text-3xl font-bold tracking-tight mb-4">Real World Impact(Case Studies)</h2>
         <p className="text-muted-foreground max-w-2xl mx-auto">
-          See how teams and developers use AI Project Analyzer to improve their codebases.
+          See how teams and developers use AI Project Review to improve their codebases.
         </p>
       </div>
 

@@ -54,14 +54,14 @@ export default function NavBar() {
             </div>
             <div className="flex flex-1 items-center justify-center sm:items-stretch sm:justify-start">
               {/* <div className="flex shrink-0 items-center">
-              <h1>AI Project Analyzer</h1>
+              <h1>AI Project Review</h1>
             </div> */}
               <div className="flex items-center gap-2">
                 <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary/10">
                   <GitBranch className="h-5 w-5 text-primary" />
                 </div>
                 <span className="text-lg font-semibold tracking-tight">
-                  AI Project Analyzer
+                  AI Project Review
                 </span>
               </div>
               <div className="hidden sm:ml-6 sm:block">

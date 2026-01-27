@@ -17,30 +17,30 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: {
-    default: "AI Project Analyzer",
-    template: "%s | AI Project Analyzer",
+    default: "AI Project Review",
+    template: "%s | AI Project Review",
   },
-  description: "Analyze GitHub and Bitbucket repositories with AI. Automated code quality checks, security audits, architecture visualization, and performance insights in one powerful developer platform.",
+  description: "Review GitHub and Bitbucket repositories with AI. Automated code quality checks, security audits, architecture visualization, and performance insights in one powerful developer platform.",
   metadataBase: new URL("https://ai-project-review.vercel.app/"),
   openGraph: {
-    title: "AI Project Analyzer",
-    description: "Analyze GitHub and Bitbucket repositories with AI-powered code insights.",
+    title: "AI Project Review",
+    description: "Review GitHub and Bitbucket repositories with AI-powered code insights.",
     url: "https://ai-project-review.vercel.app/",
-    siteName: "AI Project Analyzer",
+    siteName: "AI Project Review",
     type: "website",
     images: [
       {
         url: "/ogImage.png",   // from public folder
         width: 1200,
         height: 630,
-        alt: "AI Project Analyzer",
+        alt: "AI Project Review",
       },
     ],
   },
   twitter: {
     card: "summary_large_image",
-    title: "AI Project Analyzer",
-    description: "Analyze GitHub and Bitbucket repositories with AI-powered code insights.",
+    title: "AI Project Review",
+    description: "Review GitHub and Bitbucket repositories with AI-powered code insights.",
     images: ["/vercel.svg"],
   },
   robots: {
