@@ -57,7 +57,7 @@ function Hero({ onGuestReview }: { onGuestReview: () => void }) {
               className="inline-flex cursor-pointer items-center justify-center gap-2 rounded-md border px-5 py-2.5 text-sm font-medium bg-foreground text-background hover:opacity-90 transition"
             >
               <FiGithub className="h-4 w-4" />
-              Analyze with GitHub
+              Review with GitHub
             </button>
 
             <button
@@ -66,7 +66,7 @@ function Hero({ onGuestReview }: { onGuestReview: () => void }) {
               className="inline-flex cursor-pointer items-center justify-center gap-2 rounded-md border px-5 py-2.5 text-sm font-medium bg-[#2684FF] text-white hover:brightness-110 transition"
             >
               <FaBitbucket className="h-4 w-4" />
-              Analyze with Bitbucket
+              Review with Bitbucket
             </button>
             {/* Guest */}
             <button

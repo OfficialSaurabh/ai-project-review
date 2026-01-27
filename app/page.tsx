@@ -118,7 +118,7 @@ export default function Home() {
         <div className="max-w-7xl mx-auto space-y-8">
           <div className="text-center mb-12 animate-in fade-in slide-in-from-top duration-700">
             <h1 className="text-5xl md:text-6xl font-bold mb-4 bg-gradient-to-r from-primary via-foreground to-primary bg-clip-text text-transparent">
-              AI Project Analyzer
+              AI Project Review
             </h1>
             <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
               AI-powered code review and architecture analysis with actionable insights for production-ready software.
