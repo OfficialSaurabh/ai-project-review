@@ -9,8 +9,11 @@ import Transparency from './transparency';
 import { Stick } from 'next/font/google';
 import StickyScrollReveal from './sticky-scroll-reveal';
 
+interface HeroProps {
+  onGuestLogin: () => void;
+}
 
-function Hero() {
+function Hero({ onGuestLogin }: HeroProps) {
   // const { data: session } = useSession()
 
   return (
@@ -67,6 +70,15 @@ function Hero() {
             >
               <FaBitbucket className="h-4 w-4" />
               Analyze with Bitbucket
+            </button>
+          </div>
+          <div className="flex flex-wrap items-center gap-4 mt-4">
+            <button
+              type="button"
+              onClick={onGuestLogin}
+              className="inline-flex items-center justify-center gap-2 rounded-md border px-5 py-2.5 text-sm font-medium hover:bg-muted/50 transition"
+            >
+              Review Local Files
             </button>
           </div>
 

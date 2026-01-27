@@ -14,22 +14,73 @@ export default function StickyScrollReveal() {
     // Preload images
     useEffect(() => {
         const loadImages = async () => {
-            const loadedImages: HTMLImageElement[] = [];
-
-            for (let i = 1; i <= frameCount; i++) {
-                const img = new Image();
-                // Format path: public/motion/frame_XXX.webp
-                const frameNumber = i.toString().padStart(3, '0');
-                img.src = `/motion/frame_${frameNumber}.webp`;
-                await new Promise((resolve) => {
-                    img.onload = () => resolve(true);
-                    img.onerror = () => resolve(true); // Continue even if error
+            // function to load single image
+            const loadImage = (index: number): Promise<HTMLImageElement> => {
+                return new Promise((resolve) => {
+                    const img = new Image();
+                    const frameNumber = index.toString().padStart(3, '0');
+                    img.src = `/motion/frame_${frameNumber}.webp`;
+                    img.onload = () => resolve(img);
+                    img.onerror = () => {
+                        console.error(`Failed to load frame ${index}`);
+                        resolve(img);
+                    };
                 });
-                loadedImages.push(img);
+            };
+
+            // Initialize array
+            setImages(new Array(frameCount).fill(undefined) as any); // cast to avoid TS issues with empty slots if needed, or better:
+            // Actually, let's just use a sparse array or fill with null if we change type
+            // But to keep types simple, let's just handle transparency
+
+            // 1. Load initial batch (Fast TTI)
+            const initialBatchCount = 30;
+            const initialPromises: Promise<HTMLImageElement>[] = [];
+            for (let i = 1; i <= initialBatchCount; i++) {
+                initialPromises.push(loadImage(i));
             }
 
-            setImages(loadedImages);
-            setIsLoading(false);
+            const initialImages = await Promise.all(initialPromises);
+
+            setImages((prev) => {
+                const newImages = [...prev];
+                // Ensure array is big enough if not already
+                if (newImages.length < frameCount) {
+                    // Fill with undefined/empty up to frameCount? 
+                    // Actually, let's just assign.
+                }
+                initialImages.forEach((img, idx) => {
+                    newImages[idx] = img;
+                });
+                return newImages;
+            });
+
+            setIsLoading(false); // Enable UI interaction immediately
+
+            // 2. Load the rest in background chunks
+            const chunkSize = 50;
+            for (let i = initialBatchCount + 1; i <= frameCount; i += chunkSize) {
+                const chunkPromises: Promise<HTMLImageElement>[] = [];
+                const end = Math.min(i + chunkSize - 1, frameCount);
+
+                for (let j = i; j <= end; j++) {
+                    chunkPromises.push(loadImage(j));
+                }
+
+                const chunkImages = await Promise.all(chunkPromises);
+
+                setImages((prev) => {
+                    const newImages = [...prev];
+                    chunkImages.forEach((img, idx) => {
+                        const globalIndex = (i + idx) - 1; // i is 1-based start of chunk
+                        newImages[globalIndex] = img;
+                    });
+                    return newImages;
+                });
+
+                // Optional: small delay to yield to main thread if needed
+                await new Promise(r => setTimeout(r, 50));
+            }
         };
 
         loadImages();
@@ -97,14 +148,14 @@ export default function StickyScrollReveal() {
 
                     {/* Overlays */}
 
-                    <div className="absolute inset-0 z-20 pointer-events-none mx-12">
+                    <div className="absolute inset-0 z-20 pointer-events-none mx-20 margin-bottom: 30px">
                         {/* Text 1 */}
                         <motion.div
                             style={{ opacity: text1Opacity }}
                             className="absolute text-left"
                         >
-                            <h2 className="text-5xl md:text-7xl font-bold bg-clip-text text-transparent bg-gradient-to-b from-white to-white/50 drop-shadow-lg">
-                                Detailed Analysis 
+                            <h2 className="text-3xl md:text-5xl font-bold bg-clip-text text-transparent bg-gradient-to-b from-white to-white/50 drop-shadow-lg">
+                                Detailed Analysis
                             </h2>
                             <p className="text-sm text-muted-foreground tracking-wide">
                                 Every line of code, scrutinized.
@@ -129,7 +180,7 @@ export default function StickyScrollReveal() {
                             style={{ opacity: text3Opacity }}
                             className="absolute text-left"
                         >
-                            <h2 className="text-3xl  md:text-5xl font-bold bg-clip-text text-transparent bg-gradient-to-b from-white to-white/50 drop-shadow-lg">
+                            <h2 className="text-3xl md:text-5xl font-bold bg-clip-text text-transparent bg-gradient-to-b from-white to-white/50 drop-shadow-lg">
                                 Actionable Feedback
                             </h2>
                             <p className="text-sm text-muted-foreground tracking-wide">
