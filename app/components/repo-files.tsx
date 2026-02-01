@@ -134,17 +134,29 @@ export const FileExplorer = ({
 
   const webhookUrl = process.env.NEXT_PUBLIC_REVIEW_WEBHOOK;
   const normalizeReviewResponse = (data: any) => {
-    const issues = (data.file?.issues || data.topIssues || []).map((issue: any, idx: number) => ({
-      ...issue,
-      suggestions: (data.file?.suggestions || data.suggestions || [])
-        .filter((s: any) => s.issueIndex === idx)
-        .map((s: any) => ({
-          title: s.title,
-          explanation: s.explanation,
-          diff_example: s.diff_example,
-          codeSnippet: s.codeSnippet,
-        }))
-    }));
+    const relatedSuggestions = (data.file?.suggestions || data.suggestions || [])
+    const issues = (data.file?.issues || data.topIssues || []).map(
+      (issue: any, idx: number) => {
+        const issueSuggestions = relatedSuggestions.filter(
+          (s: any) => s.issueIndex === idx
+        );
+
+        return {
+          ...issue,
+          codeSnippet:
+            issue.codeSnippet ||
+            issueSuggestions[0]?.codeSnippet ||
+            "",
+          suggestions: issueSuggestions.map((s: any) => ({
+            title: s.title,
+            explanation: s.explanation,
+            diff_example: s.diff_example,
+            codeSnippet: s.codeSnippet,
+          })),
+        };
+      }
+    );
+
 
     return {
       project: data.project,
@@ -176,10 +188,19 @@ export const FileExplorer = ({
         documentationScore: data.metrics?.documentationScore ?? 0,
         readability: data.metrics?.readability ?? 0,
       },
-      topIssues: (data.issues || []).map((i: any) => ({
-        ...i,
-        suggestions: i.suggestions || []
-      })),
+      topIssues: (data.issues || []).map((issue: any) => {
+        const suggestions = issue.suggestions || [];
+
+        return {
+          ...issue,
+          codeSnippet:
+            issue.codeSnippet ||
+            suggestions[0]?.codeSnippet ||
+            "",
+          suggestions,
+        };
+      }),
+
       file: {
         language: data.language,   // <-- ADD
       },
@@ -347,7 +368,7 @@ export const FileExplorer = ({
     try {
       const mappedResponse = await sendReviewRequest(payload);
       console.log("Repo File Raw File", mappedResponse);
-      
+
 
       setReviewData(mappedResponse);
       setLastReviewedFile(filename)
@@ -543,8 +564,8 @@ export const FileExplorer = ({
       {/* Files UI */}
       {!isReviewLoading && showFile && (
         <div className="glass-card p-6 rounded-xl">
-          <div className="flex items-center justify-between mb-6">
-            <div>
+          <div className="flex items-center  mb-6">
+            <div className="w-full">
               <h2 className="text-2xl font-bold font-mono mb-1">{repoName}</h2>
               <p className="text-muted-foreground">
                 {/* {displayFiles.length} files found */}
