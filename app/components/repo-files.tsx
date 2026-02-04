@@ -76,6 +76,7 @@ export const FileExplorer = ({
   const [selectedContent, setSelectedContent] = useState<string>("");
   const [isFileLoading, setIsFileLoading] = useState(false);
   const [branchFiles, setBranchFiles] = useState<FileItem[]>([]);
+
   const analysisRef = useRef<HTMLDivElement | null>(null);
   const allowedEmails =
     process.env.NEXT_PUBLIC_FULL_REVIEW_ALLOWED_EMAILS?.split(",").map(e => e.trim()) || [];
@@ -108,6 +109,9 @@ export const FileExplorer = ({
   const fileTree = buildFileTree(
     branchFiles.map(f => f.path)
   );
+
+  const normalizePath = (p: string) =>
+    p.replace(/^\/+/, "").replace(/\\/g, "/");
 
 
 
@@ -344,9 +348,10 @@ export const FileExplorer = ({
       setIsReviewLoading(false);
     }
   };
-  const normalizedFileList = fileList.map(p =>
-    p.startsWith("/") ? p.slice(1) : p
-  );
+  const normalizedFileList = fileList.map(normalizePath);
+  const normalizedSelectedPath = selectedPath
+    ? normalizePath(selectedPath)
+    : null;
 
   const handleReviewFile = async (path: string) => {
     if (!session?.provider || !session?.accessToken) {
@@ -382,6 +387,7 @@ export const FileExplorer = ({
       // setShowFile(true);
     }
   };
+
 
   const fetchLastReview = async (path?: string) => {
     if (!session?.provider) {
@@ -445,7 +451,7 @@ export const FileExplorer = ({
 
 
   const fetchFiles = async () => {
-    setFileList([]);
+    // setFileList([]);
     setFileLoading(true);
     if (!session?.provider) {
       toast.error("Provider missing from session");
@@ -683,16 +689,17 @@ export const FileExplorer = ({
               {selectedPath && !isImageFile(selectedPath) && !fileLoading &&
                 !isFileLoading && (
                   <div className="absolute top-5 right-10 flex gap-2 z-10">
-                    {normalizedFileList.includes(selectedPath) && (
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        className="cursor-pointer"
-                        onClick={() => fetchLastReview(selectedPath)}
-                      >
-                        View Last Review
-                      </Button>
-                    )}
+                    {normalizedSelectedPath &&
+                      normalizedFileList.includes(normalizedSelectedPath) && (
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="cursor-pointer"
+                          onClick={() => fetchLastReview(selectedPath)}
+                        >
+                          View Last Review
+                        </Button>
+                      )}
 
                     <Button
                       size="sm"
