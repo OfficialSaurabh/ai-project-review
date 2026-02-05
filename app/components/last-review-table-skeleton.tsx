@@ -10,11 +10,13 @@ import {
 } from "@/components/ui/table";
 
 const rowWidths = [
-  [60, 40, 30, 30, 80, 20],
-  [70, 50, 40, 35, 75, 25],
-  [55, 45, 35, 30, 85, 20],
-  [65, 50, 40, 35, 70, 25],
-  [60, 45, 35, 30, 80, 20],
+  [60, 40, 30, 30, 80, 40, 20],
+  [70, 50, 40, 35, 75, 40, 25],
+  [55, 45, 35, 30, 85, 40, 20],
+  [65, 50, 40, 35, 70, 40, 25],
+  [60, 45, 35, 30, 80, 40, 20],
+  [60, 45, 35, 30, 80, 40, 20],
+  [60, 45, 35, 30, 80, 40, 20]
 ];
 
 export const LastReviewTableSkeleton = () => {
@@ -23,7 +25,7 @@ export const LastReviewTableSkeleton = () => {
       <Table>
         <TableHeader>
           <TableRow className="bg-muted">
-            {["File", "Score", "Critical", "Major", "Summary", ""].map((_, i) => (
+            {["File", "Score", "Critical", "Major", "Summary", "Last Review", "Action"].map((_, i) => (
               <TableHead key={i}>
                 <div className="h-4 w-16 rounded bg-white/10" />
               </TableHead>
