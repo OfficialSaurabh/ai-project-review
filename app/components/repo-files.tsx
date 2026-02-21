@@ -16,6 +16,9 @@ import { fetchFileContent } from "../utils/fetchFileContent";
 import { CodeViewer } from "./code-viewer";
 import { getLanguage } from "../utils/getLanguage";
 import { useRef } from "react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { LastReviewTable } from "./last-review-table";
+
 
 
 
@@ -23,6 +26,7 @@ import { useRef } from "react";
 import { create } from "domain";
 import { log } from "console";
 import CodeSkeleton from "./code-skeleton";
+import { ClockFading, FileCodeCorner } from "lucide-react";
 
 
 interface FileItem {
@@ -53,7 +57,16 @@ interface AnalysisResponse {
     language: string;
   };
 }
-
+interface LastReviewedFile {
+  filename: string;
+  language: string;
+  fileScore: number;
+  totalIssues: number;
+  criticalIssues: number;
+  majorIssues: number;
+  summary: string;
+  lastReviewedAt: string;
+}
 const imageExtensions = [".png", ".jpg", ".jpeg", ".gif", ".svg", ".webp", ".bmp", ".ico", ".tiff", ".csv", ".xls", ".xlsx", ".ppt", ".pptx", ".pdf"];
 
 
@@ -66,6 +79,8 @@ export const FileExplorer = ({
   const [isReviewLoading, setIsReviewLoading] = useState(false);
   const [selectedFileContent, setSelectedFileContent] = useState("");
   const [reviewData, setReviewData] = useState<AnalysisResponse | null>(null);
+  console.log("Review Data", reviewData);
+  
   const [showFile, setShowFile] = useState(true);
   const [isReviewOpen, setIsReviewOpen] = useState(false);
   const [lastReviewedFile, setLastReviewedFile] = useState<string | null>(null);
@@ -76,8 +91,9 @@ export const FileExplorer = ({
   const [selectedContent, setSelectedContent] = useState<string>("");
   const [isFileLoading, setIsFileLoading] = useState(false);
   const [branchFiles, setBranchFiles] = useState<FileItem[]>([]);
-
   const analysisRef = useRef<HTMLDivElement | null>(null);
+  const [lastReviewFiles, setLastReviewFiles] = useState<LastReviewedFile[]>([]);
+  const [isLastReviewLoading, setIsLastReviewLoading] = useState(false);
   const allowedEmails =
     process.env.NEXT_PUBLIC_FULL_REVIEW_ALLOWED_EMAILS?.split(",").map(e => e.trim()) || [];
 
@@ -138,20 +154,113 @@ export const FileExplorer = ({
 
   const webhookUrl = process.env.NEXT_PUBLIC_REVIEW_WEBHOOK;
   const normalizeReviewResponse = (data: any) => {
-    const relatedSuggestions = (data.file?.suggestions || data.suggestions || [])
-    const issues = (data.file?.issues || data.topIssues || []).map(
+    // detect mode
+    const isFullReview = Array.isArray(data.files);
+
+    // pick correct file source
+    const fileData = isFullReview
+      ? data.files[0] || {}
+      : data.file || {};
+
+    const issuesSource =
+      fileData.issues || data.topIssues || [];
+
+    const suggestionsSource =
+      fileData.suggestions || data.suggestions || [];
+
+    const issues = issuesSource.map((issue: any, idx: number) => {
+      const issueSuggestions = suggestionsSource.filter(
+        (s: any) => s.issueIndex === idx
+      );
+
+      return {
+        ...issue,
+        codeSnippet:
+          issue.codeSnippet ||
+          issueSuggestions[0]?.codeSnippet ||
+          "",
+        suggestions: issueSuggestions.map((s: any) => ({
+          title: s.title,
+          explanation: s.explanation,
+          diff_example: s.diff_example,
+          codeSnippet: s.codeSnippet,
+        })),
+      };
+    });
+
+    return {
+      project: data.project,
+      overallFileScore:
+        fileData.overallFileScore ??
+        data.overallProjectScore ??
+        0,
+
+      metrics: {
+        testCoverageEstimate:
+          fileData.metrics?.testCoverageEstimate ?? 0,
+        documentationScore:
+          fileData.metrics?.documentationScore ?? 0,
+        readability:
+          fileData.metrics?.readability ?? 0,
+      },
+
+      topIssues: issues,
+
+      createdAt:
+        data.createdAt ??
+        new Date().toISOString(),
+
+      file: {
+        language: fileData.language ?? "plaintext",
+      },
+    };
+  };
+
+  const normalizeLastReviewResponse = (
+    data: any,
+    owner: string,
+    repo: string
+  ) => {
+    if (!data?.exists) {
+      throw new Error("No stored review exists");
+    }
+
+    // detect schema variants
+    const fileData =
+      data.file ||
+      (Array.isArray(data.files) ? data.files[0] : null) ||
+      data;
+
+    const issuesSource =
+      fileData?.issues ||
+      data.issues ||
+      [];
+
+    const suggestionsSource =
+      fileData?.suggestions ||
+      data.suggestions ||
+      [];
+
+    const issues = issuesSource.map(
       (issue: any, idx: number) => {
-        const issueSuggestions = relatedSuggestions.filter(
-          (s: any) => s.issueIndex === idx
-        );
+        // match suggestions either embedded OR indexed
+        const indexedSuggestions =
+          suggestionsSource.filter(
+            (s: any) => s.issueIndex === idx
+          );
+
+        const mergedSuggestions =
+          issue.suggestions?.length
+            ? issue.suggestions
+            : indexedSuggestions;
 
         return {
           ...issue,
           codeSnippet:
             issue.codeSnippet ||
-            issueSuggestions[0]?.codeSnippet ||
+            mergedSuggestions[0]?.codeSnippet ||
             "",
-          suggestions: issueSuggestions.map((s: any) => ({
+          suggestions: mergedSuggestions.map((s: any) => ({
             title: s.title,
             explanation: s.explanation,
             diff_example: s.diff_example,
@@ -161,55 +270,76 @@ export const FileExplorer = ({
       }
     );
 
-
-    return {
-      project: data.project,
-      overallFileScore: data.file?.overallFileScore ?? data.overallProjectScore ?? 0,
-      metrics: {
-        testCoverageEstimate: data.file?.metrics?.testCoverageEstimate ?? 0,
-        documentationScore: data.file?.metrics?.documentationScore ?? 0,
-        readability: data.file?.metrics?.readability ?? 0,
-      },
-      topIssues: issues,
-      createdAt: data.createdAt ?? new Date().toISOString(),
-      file: {
-        language: data.file?.language ?? "plaintext",
-      },
-    };
-  };
-
-  const normalizeLastReviewResponse = (data: any, owner: string, repo: string) => {
-    if (!data?.exists) {
-      throw new Error("No stored review exists");
-    }
-
     return {
       project: `${owner}/${repo}@main`,
       createdAt: data.createdAt,
-      overallFileScore: data.fileScore ?? 0,
-      metrics: {
-        testCoverageEstimate: data.metrics?.testCoverageEstimate ?? 0,
-        documentationScore: data.metrics?.documentationScore ?? 0,
-        readability: data.metrics?.readability ?? 0,
-      },
-      topIssues: (data.issues || []).map((issue: any) => {
-        const suggestions = issue.suggestions || [];
 
-        return {
-          ...issue,
-          codeSnippet:
-            issue.codeSnippet ||
-            suggestions[0]?.codeSnippet ||
-            "",
-          suggestions,
-        };
-      }),
+      overallFileScore:
+        fileData?.overallFileScore ??
+        data.fileScore ??
+        data.overallProjectScore ??
+        0,
+
+      metrics: {
+        testCoverageEstimate:
+          fileData?.metrics?.testCoverageEstimate ??
+          data.metrics?.testCoverageEstimate ??
+          0,
+
+        documentationScore:
+          fileData?.metrics?.documentationScore ??
+          data.metrics?.documentationScore ??
+          0,
+
+        readability:
+          fileData?.metrics?.readability ??
+          data.metrics?.readability ??
+          0,
+      },
+
+      topIssues: issues,
 
       file: {
-        language: data.language,   // <-- ADD
+        language:
+          fileData?.language ||
+          data.language ||
+          "plaintext",
       },
     };
   };
+
+  // const normalizeLastReviewResponse = (data: any, owner: string, repo: string) => {
+  //   if (!data?.exists) {
+  //     throw new Error("No stored review exists");
+  //   }
+
+  //   return {
+  //     project: `${owner}/${repo}@main`,
+  //     createdAt: data.createdAt,
+  //     overallFileScore: data.fileScore ?? 0,
+  //     metrics: {
+  //       testCoverageEstimate: data.metrics?.testCoverageEstimate ?? 0,
+  //       documentationScore: data.metrics?.documentationScore ?? 0,
+  //       readability: data.metrics?.readability ?? 0,
+  //     },
+  //     topIssues: (data.issues || []).map((issue: any) => {
+  //       const suggestions = issue.suggestions || [];
+
+  //       return {
+  //         ...issue,
+  //         codeSnippet:
+  //           issue.codeSnippet ||
+  //           suggestions[0]?.codeSnippet ||
+  //           "",
+  //         suggestions,
+  //       };
+  //     }),
+
+  //     file: {
+  //       language: data.language,   // <-- ADD
+  //     },
+  //   };
+  // };
 
   const fetchBranches = async () => {
     if (!session?.provider) {
@@ -342,6 +472,8 @@ export const FileExplorer = ({
       if (!res.ok) throw new Error(`API error: ${res.status} ${res.statusText}`);
 
       const data = await res.json().catch(() => null);
+      console.log("Full Review Data", data);
+      
       return normalizeReviewResponse(data);
     } finally {
       // Ensure loading always stops
@@ -495,6 +627,78 @@ export const FileExplorer = ({
       setFileLoading(false);
     }
   };
+  // Fetch last reviewed files summary for the "Last Review" tab
+
+  const fetchLastReviewedFiles = async () => {
+    if (!session?.provider) {
+      toast.error("Provider missing from session");
+      return;
+    }
+
+    setIsLastReviewLoading(true);
+
+    try {
+      const params = new URLSearchParams({
+        provider: session.provider,
+        owner,
+        repo: repoName,
+        ref: selectedBranch,
+        limit: "10",
+      });
+
+      const res = await fetch(
+        `${process.env.NEXT_PUBLIC_BASE_URL}/reviews/files/last?${params.toString()}`,
+        { headers: { Accept: "application/json" } }
+      );
+
+      if (!res.ok) throw new Error(`API error: ${res.status}`);
+
+      const data = await res.json();
+
+      if (!data.exists || !Array.isArray(data.files)) {
+        setLastReviewFiles([]);
+        return;
+      }
+
+      setLastReviewFiles(data.files);
+    } catch (err) {
+      console.error("Failed to load last reviewed files", err);
+      toast.error("Failed to load last reviews");
+      setLastReviewFiles([]);
+    } finally {
+      setIsLastReviewLoading(false);
+    }
+  };
+
+  const handleViewLastReviewedFile = async (filename: string) => {
+    const normalized = filename.replace(/^\/+/, "");
+
+    // 1. Select file in tree
+    setSelectedPath(normalized);
+    setShowFile(true);
+    // 2. Load file content
+    setIsFileLoading(true);
+    try {
+      const content = await fetchFileContent(
+        owner,
+        repoName,
+        normalized,
+        selectedBranch,
+        session!.accessToken!,
+        session!.provider!
+      );
+      setSelectedContent(content);
+    } finally {
+      setIsFileLoading(false);
+    }
+
+    // 3. Fetch last review for that file
+    await fetchLastReview(normalized);
+
+    // 4. Open review panel
+    setIsReviewOpen(true);
+  };
+
 
 
   const handleFullReview = async () => {
@@ -513,7 +717,6 @@ export const FileExplorer = ({
 
     try {
       const mappedResponse = await sendReviewRequest(payload);
-
       setReviewData(mappedResponse);
       setIsReviewOpen(true);
       setShowFile(false);
@@ -569,165 +772,205 @@ export const FileExplorer = ({
       )}
       {/* Files UI */}
       {!isReviewLoading && showFile && (
-        <div className="glass-card p-6 rounded-xl">
-          <div className="flex items-center  mb-6">
-            <div className="w-full">
-              <h2 className="text-2xl font-bold font-mono mb-1">{repoName}</h2>
-              <p className="text-muted-foreground">
-                {/* {displayFiles.length} files found */}
-              </p>
-            </div>
-            <div className=" flex flex-col justify-end gap-3 sm:flex-row sm:items-center sm:gap-4 w-full">
-              {/* <Button
+
+        <Tabs onValueChange={(value) => {
+          if (value === "recentReviews") {
+            setIsReviewOpen(false);
+            fetchLastReviewedFiles();
+          }
+        }} defaultValue="files" className="space-y-6">
+          <TabsList className="glass-card p-1 grid w-full grid-cols-3">
+            <TabsTrigger
+              value="files"
+              className="gap-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
+            >
+              <FileCodeCorner />
+              Files
+            </TabsTrigger>
+            <TabsTrigger
+              value="recentReviews"
+              className=" gap-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
+            >
+              <ClockFading />
+              Recent Reviews
+            </TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="files" className="space-y-4">
+            <div className="glass-card p-6 rounded-xl">
+              <div className="flex items-center  mb-6">
+                <div className="w-full">
+                  <h2 className="text-2xl font-bold font-mono mb-1">{repoName}</h2>
+                  <p className="text-muted-foreground">
+                    {/* {displayFiles.length} files found */}
+                  </p>
+                </div>
+                <div className=" flex flex-col justify-end gap-3 sm:flex-row sm:items-center sm:gap-4 w-full">
+                  {/* <Button
               variant="outline"
               onClick={fetchLastReview}
               className="border-primary/50 hover:bg-primary hover:text-primary-foreground"
             >
               View Last Review
             </Button> */}
-              <div className="relative w-full sm:w-auto justify-content-end ">
-                <BiGitBranch className="absolute left-3 top-1/2 -translate-y-1/2 text-primary pointer-events-none" />
+                  <div className="relative w-full sm:w-auto justify-content-end ">
+                    <BiGitBranch className="absolute left-3 top-1/2 -translate-y-1/2 text-primary pointer-events-none" />
 
-                {selectedBranch && (
-                  <select
-                    value={selectedBranch}
-                    onChange={(e) => setSelectedBranch(e.target.value)}
-                    className="border h-9 pl-10 pr-3 rounded-xl px-2 py-1 bg-background cursor-pointer w-full sm:w-auto"
-                  >
-                    {branches.map((b) => (
-                      <option key={b} value={b}>{b}</option>
-                    ))}
-                  </select>
-                )}
-              </div>
-
-              <Button
-                variant="outline"
-                onClick={() => fetchLastReview()}
-                className="border-primary/50 hover:bg-primary hover:text-primary-foreground cursor-pointer w-full sm:w-auto"
-              >
-                Overall Last Review
-              </Button>
-
-              <div className="relative group w-full sm:w-auto">
-                {(() => {
-                  const isAllowed = !!session?.user?.email && allowedEmails.includes(session.user.email);
-                  return (
-                    <>
-                      <Button
-                        disabled={!isAllowed}
-                        className="bg-primary hover:bg-primary/90 text-primary-foreground glow-effect w-full sm:w-auto
-                     disabled:opacity-50 disabled:cursor-not-allowed"
-                        onClick={handleFullReview}
+                    {selectedBranch && (
+                      <select
+                        value={selectedBranch}
+                        onChange={(e) => setSelectedBranch(e.target.value)}
+                        className="border h-9 pl-10 pr-3 rounded-xl px-2 py-1 bg-background cursor-pointer w-full sm:w-auto"
                       >
-                        Review Full Project
-                      </Button>
+                        {branches.map((b) => (
+                          <option key={b} value={b}>{b}</option>
+                        ))}
+                      </select>
+                    )}
+                  </div>
 
-                      <span
-                        className="absolute bottom-full mb-2 left-1/2 -translate-x-1/2
+                  <Button
+                    variant="outline"
+                    onClick={() => fetchLastReview()}
+                    className="border-primary/50 hover:bg-primary hover:text-primary-foreground cursor-pointer w-full sm:w-auto"
+                  >
+                    Overall Last Review
+                  </Button>
+
+                  <div className="relative group w-full sm:w-auto">
+                    {(() => {
+                      const isAllowed = !!session?.user?.email && allowedEmails.includes(session.user.email);
+                      return (
+                        <>
+                          <Button
+                            disabled={!isAllowed}
+                            className="bg-primary hover:bg-primary/90 text-primary-foreground glow-effect w-full sm:w-auto
+                     disabled:opacity-50 disabled:cursor-not-allowed"
+                            onClick={handleFullReview}
+                          >
+                            Review Full Project
+                          </Button>
+
+                          <span
+                            className="absolute bottom-full mb-2 left-1/2 -translate-x-1/2
                      whitespace-nowrap rounded  px-2 py-1 text-foreground text-xs bg-background/90 backdrop-blur border border-border
                      opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none"
-                      >
-                        {isAllowed ? (
-                          <>
-                            Large repositories may exceed the free plan limits.<br />
-                            For optimal results, review smaller projects or files.
-                          </>
-                        ) : (
-                          <>
-                            Full project review is restricted to the owner account.<br />
-                            Contact admin to request access.
-                          </>
-                        )}
-                      </span>
-                    </>
-                  );
-                })()}
-              </div>
+                          >
+                            {isAllowed ? (
+                              <>
+                                Large repositories may exceed the free plan limits.<br />
+                                For optimal results, review smaller projects or files.
+                              </>
+                            ) : (
+                              <>
+                                Full project review is restricted to the owner account.<br />
+                                Contact admin to request access.
+                              </>
+                            )}
+                          </span>
+                        </>
+                      );
+                    })()}
+                  </div>
 
 
-
-            </div>
-          </div>
-          <div className="grid grid-cols-1 lg:grid-cols-[300px_1fr] h-[600px] gap-4">
-
-            <ScrollArea className="h-[300px] lg:h-[600px] pr-4">
-              {fileLoading && (
-                <FileTreeSkeleton />
-              )}
-              {!fileLoading && (
-                <div className="space-y-2">
-                  <FileTree
-                    nodes={fileTree}
-                    selectedPath={selectedPath}
-                    onSelect={async (path) => {
-                      setSelectedPath(path);
-                      setIsFileLoading(true);
-
-                      try {
-                        const content = await fetchFileContent(
-                          owner,
-                          repoName,
-                          path,
-                          selectedBranch,
-                          session!.accessToken!,
-                          session!.provider!,
-                        );
-                        setSelectedContent(content);
-                      } finally {
-                        setIsFileLoading(false);
-                      }
-                    }}
-
-                  />
 
                 </div>
-              )}
-            </ScrollArea>
+              </div>
+              <div className="grid grid-cols-1 lg:grid-cols-[300px_1fr] h-[600px] gap-4">
 
-            <div className="relative flex flex-col h-[300px] lg:h-[600px]">
-              {selectedPath && !isImageFile(selectedPath) && !fileLoading &&
-                !isFileLoading && (
-                  <div className="absolute top-5 right-10 flex gap-2 z-10">
-                    {normalizedSelectedPath &&
-                      normalizedFileList.includes(normalizedSelectedPath) && (
+                <ScrollArea className="h-[300px] lg:h-[600px] pr-4">
+                  {fileLoading && (
+                    <FileTreeSkeleton />
+                  )}
+                  {!fileLoading && (
+                    <div className="space-y-2">
+                      <FileTree
+                        nodes={fileTree}
+                        selectedPath={selectedPath}
+                        onSelect={async (path) => {
+                          setSelectedPath(path);
+                          setIsFileLoading(true);
+
+                          try {
+                            const content = await fetchFileContent(
+                              owner,
+                              repoName,
+                              path,
+                              selectedBranch,
+                              session!.accessToken!,
+                              session!.provider!,
+                            );
+                            setSelectedContent(content);
+                          } finally {
+                            setIsFileLoading(false);
+                          }
+                        }}
+
+                      />
+
+                    </div>
+                  )}
+                </ScrollArea>
+
+                <div className="relative flex flex-col h-[300px] lg:h-[600px]">
+                  {selectedPath && !isImageFile(selectedPath) && !fileLoading &&
+                    !isFileLoading && (
+                      <div className="absolute top-5 right-10 flex gap-2 z-10">
+                        {normalizedSelectedPath &&
+                          normalizedFileList.includes(normalizedSelectedPath) && (
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              className="cursor-pointer"
+                              onClick={() => fetchLastReview(selectedPath)}
+                            >
+                              View Last Review
+                            </Button>
+                          )}
+
                         <Button
                           size="sm"
-                          variant="outline"
                           className="cursor-pointer"
-                          onClick={() => fetchLastReview(selectedPath)}
+                          onClick={() => handleReviewFile(selectedPath)}
                         >
-                          View Last Review
+                          Review File
                         </Button>
-                      )}
+                      </div>
+                    )}
 
-                    <Button
-                      size="sm"
-                      className="cursor-pointer"
-                      onClick={() => handleReviewFile(selectedPath)}
-                    >
-                      Review File
-                    </Button>
-                  </div>
-                )}
-
-              <ScrollArea className=" h-[600px] flex-1 p-2 font-mono text-sm bg-muted rounded-lg">
-                {isFileLoading || fileLoading ? (
-                  <CodeSkeleton />
-                ) : selectedPath ? (
-                  <CodeViewer
-                    code={selectedContent}
-                    language={getLanguage(selectedPath!)}
-                  />
-                ) : (
-                  <div className="text-muted-foreground">
-                    Select a file to view its content
-                  </div>
-                )}
-              </ScrollArea>
+                  <ScrollArea className=" h-[600px] flex-1 p-2 font-mono text-sm bg-muted rounded-lg">
+                    {isFileLoading || fileLoading ? (
+                      <CodeSkeleton />
+                    ) : selectedPath ? (
+                      <CodeViewer
+                        code={selectedContent}
+                        language={getLanguage(selectedPath!)}
+                      />
+                    ) : (
+                      <div className="text-muted-foreground">
+                        Select a file to view its content
+                      </div>
+                    )}
+                  </ScrollArea>
+                </div>
+              </div>
             </div>
-          </div>
-        </div>
+          </TabsContent>
+
+          <TabsContent value="recentReviews">
+            <div className="glass-card p-6 rounded-xl space-y-4">
+              <h3 className="text-xl font-bold">Last Reviewed Files</h3>
+
+              <LastReviewTable
+                data={lastReviewFiles}
+                loading={isLastReviewLoading}
+                onView={handleViewLastReviewedFile}
+              />
+            </div>
+          </TabsContent>
+
+        </Tabs>
       )}
 
       {!isReviewLoading && isReviewOpen && reviewData && (
