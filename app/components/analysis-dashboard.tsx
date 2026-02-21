@@ -6,6 +6,7 @@ import { HealthScore } from "./health-score";
 import { InsightCard } from "./insight-card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { getLanguage } from "../utils/getLanguage";
+import formatRelativeTime from "../utils/formatRelativeTime";
 
 interface AnalysisMetrics {
   testCoverageEstimate: number;
@@ -30,7 +31,7 @@ interface TopIssue {
 interface AnalysisDashboardProps {
   response: {
     project: string;
-    createdAt: string;
+    updatedAt: string;
     overallFileScore: number;
     metrics: AnalysisMetrics;
     topIssues?: TopIssue[];
@@ -45,7 +46,7 @@ interface AnalysisDashboardProps {
 
 type AnalysisResponse = {
   project: string;
-  createdAt: string;
+  updatedAt: string;
   overallFileScore: number;
   metrics: AnalysisMetrics;
   topIssues?: TopIssue[];
@@ -93,19 +94,6 @@ export const AnalysisDashboard = ({
   fetchFiles,
 }: AnalysisDashboardProps) => {
     const [isAnalyzing, setIsAnalyzing] = useState(false);
-
-  console.log("AnalysisDashboard response:", response);
-  const formatDate = (date: string | Date) => {
-    const d = new Date(date);
-
-    const day = String(d.getDate()).padStart(2, "0");
-    const month = String(d.getMonth() + 1).padStart(2, "0");
-    const year = d.getFullYear();
-
-    return `${day}-${month}-${year}`;
-  };
-
-
   // Flatten topIssues -> generic insight objects (max 4)
   const issueInsights = (response.topIssues ?? [])
     .map((issue) => ({
@@ -149,8 +137,8 @@ export const AnalysisDashboard = ({
               {response.project}
             </h2>
             <p className="text-muted-foreground">
-              {response?.createdAt
-                ? `Last Review: ${formatDate(response.createdAt)}`
+              {response?.updatedAt
+                ? `Last Review: ${formatRelativeTime(response.updatedAt)}`
                 : "Project Analysis Report"}
             </p>
           </div>

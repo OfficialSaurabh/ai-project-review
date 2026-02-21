@@ -1,5 +1,9 @@
 export const formatRelativeTime = (isoDate: string) => {
-  const date = new Date(isoDate);
+  const normalized =
+    isoDate.endsWith("Z") || isoDate.includes("+")
+      ? isoDate
+      : isoDate.replace(" ", "T") + "Z";
+  const date = new Date(normalized);
   const now = new Date();
 
   const diffMs = now.getTime() - date.getTime();
