@@ -26,6 +26,7 @@ import { LastReviewTable } from "./last-review-table";
 import { create } from "domain";
 import { log } from "console";
 import CodeSkeleton from "./code-skeleton";
+import { ClockFading, FileCodeCorner } from "lucide-react";
 
 
 interface FileItem {
@@ -78,6 +79,8 @@ export const FileExplorer = ({
   const [isReviewLoading, setIsReviewLoading] = useState(false);
   const [selectedFileContent, setSelectedFileContent] = useState("");
   const [reviewData, setReviewData] = useState<AnalysisResponse | null>(null);
+  console.log("Review Data", reviewData);
+  
   const [showFile, setShowFile] = useState(true);
   const [isReviewOpen, setIsReviewOpen] = useState(false);
   const [lastReviewedFile, setLastReviewedFile] = useState<string | null>(null);
@@ -151,20 +154,113 @@ export const FileExplorer = ({
 
   const webhookUrl = process.env.NEXT_PUBLIC_REVIEW_WEBHOOK;
   const normalizeReviewResponse = (data: any) => {
-    const relatedSuggestions = (data.file?.suggestions || data.suggestions || [])
-    const issues = (data.file?.issues || data.topIssues || []).map(
+    // detect mode
+    const isFullReview = Array.isArray(data.files);
+
+    // pick correct file source
+    const fileData = isFullReview
+      ? data.files[0] || {}
+      : data.file || {};
+
+    const issuesSource =
+      fileData.issues || data.topIssues || [];
+
+    const suggestionsSource =
+      fileData.suggestions || data.suggestions || [];
+
+    const issues = issuesSource.map((issue: any, idx: number) => {
+      const issueSuggestions = suggestionsSource.filter(
+        (s: any) => s.issueIndex === idx
+      );
+
+      return {
+        ...issue,
+        codeSnippet:
+          issue.codeSnippet ||
+          issueSuggestions[0]?.codeSnippet ||
+          "",
+        suggestions: issueSuggestions.map((s: any) => ({
+          title: s.title,
+          explanation: s.explanation,
+          diff_example: s.diff_example,
+          codeSnippet: s.codeSnippet,
+        })),
+      };
+    });
+
+    return {
+      project: data.project,
+      overallFileScore:
+        fileData.overallFileScore ??
+        data.overallProjectScore ??
+        0,
+
+      metrics: {
+        testCoverageEstimate:
+          fileData.metrics?.testCoverageEstimate ?? 0,
+        documentationScore:
+          fileData.metrics?.documentationScore ?? 0,
+        readability:
+          fileData.metrics?.readability ?? 0,
+      },
+
+      topIssues: issues,
+
+      createdAt:
+        data.createdAt ??
+        new Date().toISOString(),
+
+      file: {
+        language: fileData.language ?? "plaintext",
+      },
+    };
+  };
+
+  const normalizeLastReviewResponse = (
+    data: any,
+    owner: string,
+    repo: string
+  ) => {
+    if (!data?.exists) {
+      throw new Error("No stored review exists");
+    }
+
+    // detect schema variants
+    const fileData =
+      data.file ||
+      (Array.isArray(data.files) ? data.files[0] : null) ||
+      data;
+
+    const issuesSource =
+      fileData?.issues ||
+      data.issues ||
+      [];
+
+    const suggestionsSource =
+      fileData?.suggestions ||
+      data.suggestions ||
+      [];
+
+    const issues = issuesSource.map(
       (issue: any, idx: number) => {
-        const issueSuggestions = relatedSuggestions.filter(
-          (s: any) => s.issueIndex === idx
-        );
+        // match suggestions either embedded OR indexed
+        const indexedSuggestions =
+          suggestionsSource.filter(
+            (s: any) => s.issueIndex === idx
+          );
+
+        const mergedSuggestions =
+          issue.suggestions?.length
+            ? issue.suggestions
+            : indexedSuggestions;
 
         return {
           ...issue,
           codeSnippet:
             issue.codeSnippet ||
-            issueSuggestions[0]?.codeSnippet ||
+            mergedSuggestions[0]?.codeSnippet ||
             "",
-          suggestions: issueSuggestions.map((s: any) => ({
+          suggestions: mergedSuggestions.map((s: any) => ({
             title: s.title,
             explanation: s.explanation,
             diff_example: s.diff_example,
@@ -174,55 +270,76 @@ export const FileExplorer = ({
       }
     );
 
-
-    return {
-      project: data.project,
-      overallFileScore: data.file?.overallFileScore ?? data.overallProjectScore ?? 0,
-      metrics: {
-        testCoverageEstimate: data.file?.metrics?.testCoverageEstimate ?? 0,
-        documentationScore: data.file?.metrics?.documentationScore ?? 0,
-        readability: data.file?.metrics?.readability ?? 0,
-      },
-      topIssues: issues,
-      createdAt: data.createdAt ?? new Date().toISOString(),
-      file: {
-        language: data.file?.language ?? "plaintext",
-      },
-    };
-  };
-
-  const normalizeLastReviewResponse = (data: any, owner: string, repo: string) => {
-    if (!data?.exists) {
-      throw new Error("No stored review exists");
-    }
-
     return {
       project: `${owner}/${repo}@main`,
       createdAt: data.createdAt,
-      overallFileScore: data.fileScore ?? 0,
-      metrics: {
-        testCoverageEstimate: data.metrics?.testCoverageEstimate ?? 0,
-        documentationScore: data.metrics?.documentationScore ?? 0,
-        readability: data.metrics?.readability ?? 0,
-      },
-      topIssues: (data.issues || []).map((issue: any) => {
-        const suggestions = issue.suggestions || [];
 
-        return {
-          ...issue,
-          codeSnippet:
-            issue.codeSnippet ||
-            suggestions[0]?.codeSnippet ||
-            "",
-          suggestions,
-        };
-      }),
+      overallFileScore:
+        fileData?.overallFileScore ??
+        data.fileScore ??
+        data.overallProjectScore ??
+        0,
+
+      metrics: {
+        testCoverageEstimate:
+          fileData?.metrics?.testCoverageEstimate ??
+          data.metrics?.testCoverageEstimate ??
+          0,
+
+        documentationScore:
+          fileData?.metrics?.documentationScore ??
+          data.metrics?.documentationScore ??
+          0,
+
+        readability:
+          fileData?.metrics?.readability ??
+          data.metrics?.readability ??
+          0,
+      },
+
+      topIssues: issues,
 
       file: {
-        language: data.language,   // <-- ADD
+        language:
+          fileData?.language ||
+          data.language ||
+          "plaintext",
       },
     };
   };
+
+  // const normalizeLastReviewResponse = (data: any, owner: string, repo: string) => {
+  //   if (!data?.exists) {
+  //     throw new Error("No stored review exists");
+  //   }
+
+  //   return {
+  //     project: `${owner}/${repo}@main`,
+  //     createdAt: data.createdAt,
+  //     overallFileScore: data.fileScore ?? 0,
+  //     metrics: {
+  //       testCoverageEstimate: data.metrics?.testCoverageEstimate ?? 0,
+  //       documentationScore: data.metrics?.documentationScore ?? 0,
+  //       readability: data.metrics?.readability ?? 0,
+  //     },
+  //     topIssues: (data.issues || []).map((issue: any) => {
+  //       const suggestions = issue.suggestions || [];
+
+  //       return {
+  //         ...issue,
+  //         codeSnippet:
+  //           issue.codeSnippet ||
+  //           suggestions[0]?.codeSnippet ||
+  //           "",
+  //         suggestions,
+  //       };
+  //     }),
+
+  //     file: {
+  //       language: data.language,   // <-- ADD
+  //     },
+  //   };
+  // };
 
   const fetchBranches = async () => {
     if (!session?.provider) {
@@ -355,6 +472,8 @@ export const FileExplorer = ({
       if (!res.ok) throw new Error(`API error: ${res.status} ${res.statusText}`);
 
       const data = await res.json().catch(() => null);
+      console.log("Full Review Data", data);
+      
       return normalizeReviewResponse(data);
     } finally {
       // Ensure loading always stops
@@ -598,7 +717,6 @@ export const FileExplorer = ({
 
     try {
       const mappedResponse = await sendReviewRequest(payload);
-
       setReviewData(mappedResponse);
       setIsReviewOpen(true);
       setShowFile(false);
@@ -664,14 +782,16 @@ export const FileExplorer = ({
           <TabsList className="glass-card p-1 grid w-full grid-cols-3">
             <TabsTrigger
               value="files"
-              className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
+              className="gap-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
             >
+              <FileCodeCorner />
               Files
             </TabsTrigger>
             <TabsTrigger
               value="recentReviews"
-              className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
+              className=" gap-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
             >
+              <ClockFading />
               Recent Reviews
             </TabsTrigger>
           </TabsList>

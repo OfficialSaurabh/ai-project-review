@@ -92,7 +92,7 @@ export const AnalysisDashboard = ({
   onClose,
   fetchFiles,
 }: AnalysisDashboardProps) => {
-  const [isAnalyzing, setIsAnalyzing] = useState(false);
+    const [isAnalyzing, setIsAnalyzing] = useState(false);
 
   console.log("AnalysisDashboard response:", response);
   const formatDate = (date: string | Date) => {
@@ -108,7 +108,6 @@ export const AnalysisDashboard = ({
 
   // Flatten topIssues -> generic insight objects (max 4)
   const issueInsights = (response.topIssues ?? [])
-    .slice(0, 4)
     .map((issue) => ({
       category: issue.type,
       type: mapSeverityToType(issue.severity),

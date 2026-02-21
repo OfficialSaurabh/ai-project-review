@@ -39,6 +39,7 @@ export default function RepoList({
       {repos.map((repo) => (
         <Link
           key={repo.id}
+          scroll={true}
           href={`/repos/${encodeURIComponent(repo.owner.login)}/${encodeURIComponent(
             repo.slug ?? repo.name
           )}`}

@@ -162,6 +162,11 @@ export default function RepoFilesPage() {
     fetchFiles();
   }, [owner, name, session?.accessToken]);
 
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, []);
+
+
   if (!owner || !name) {
     // if this still hits with correct URL, something is seriously wrong
     return (
