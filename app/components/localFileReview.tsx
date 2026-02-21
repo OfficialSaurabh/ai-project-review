@@ -100,7 +100,7 @@ export default function LocalFileReview({ setReviewLocalFile }: LocalFileReviewP
 
     return {
       project: "Local Files",
-      createdAt: new Date().toISOString(),
+      updatedAt new Date().toISOString(),
       overallFileScore:
         data.file?.overallFileScore ??
         data.overallProjectScore ??
@@ -123,7 +123,7 @@ export default function LocalFileReview({ setReviewLocalFile }: LocalFileReviewP
 
     return {
       project: "Local Files",
-      createdAt: data.createdAt,
+      updatedAt data.createdAt,
       overallFileScore: data.fileScore ?? 0,
       metrics: {
         testCoverageEstimate: data.metrics?.testCoverageEstimate ?? 0,
