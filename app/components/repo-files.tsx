@@ -52,7 +52,7 @@ interface AnalysisResponse {
     readability: number;
   };
   topIssues: any[];
-  createdAt: string;
+  updatedAt: string;
   file: {
     language: string;
   };
@@ -206,8 +206,8 @@ export const FileExplorer = ({
 
       topIssues: issues,
 
-      createdAt:
-        data.createdAt ??
+      updatedAt:
+        data.updatedAt ??
         new Date().toISOString(),
 
       file: {
@@ -272,7 +272,7 @@ export const FileExplorer = ({
 
     return {
       project: `${owner}/${repo}@main`,
-      createdAt: data.createdAt,
+      updatedAt: data.updatedAt,
 
       overallFileScore:
         fileData?.overallFileScore ??

@@ -10,7 +10,7 @@ import { useSession } from "next-auth/react";
 type AnalysisResponse = {
   project: string;
   overallFileScore: number;
-  createdAt: string;
+  updatedAt: string;
   metrics: {
     testCoverageEstimate: number;
     documentationScore: number;
