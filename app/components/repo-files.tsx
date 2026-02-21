@@ -80,7 +80,7 @@ export const FileExplorer = ({
   const [selectedFileContent, setSelectedFileContent] = useState("");
   const [reviewData, setReviewData] = useState<AnalysisResponse | null>(null);
   console.log("Review Data", reviewData);
-  
+
   const [showFile, setShowFile] = useState(true);
   const [isReviewOpen, setIsReviewOpen] = useState(false);
   const [lastReviewedFile, setLastReviewedFile] = useState<string | null>(null);
@@ -315,7 +315,7 @@ export const FileExplorer = ({
 
   //   return {
   //     project: `${owner}/${repo}@main`,
-  //     createdAt: data.createdAt,
+  //     updatedAt data.createdAt,
   //     overallFileScore: data.fileScore ?? 0,
   //     metrics: {
   //       testCoverageEstimate: data.metrics?.testCoverageEstimate ?? 0,
@@ -473,7 +473,7 @@ export const FileExplorer = ({
 
       const data = await res.json().catch(() => null);
       console.log("Full Review Data", data);
-      
+
       return normalizeReviewResponse(data);
     } finally {
       // Ensure loading always stops
