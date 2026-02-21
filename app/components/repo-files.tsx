@@ -315,7 +315,7 @@ export const FileExplorer = ({
 
   //   return {
   //     project: `${owner}/${repo}@main`,
-  //     updatedAt data.createdAt,
+  //     updatedAt: data.createdAt,
   //     overallFileScore: data.fileScore ?? 0,
   //     metrics: {
   //       testCoverageEstimate: data.metrics?.testCoverageEstimate ?? 0,
